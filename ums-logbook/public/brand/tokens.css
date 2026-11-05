@@ -1,0 +1,49 @@
+/**
+ * UMS+ Ecosystem — Shared Design Tokens (CSS Custom Properties)
+ * Trường THCS Ngoại ngữ – ĐHQGHN (ULIS Middle School - UMS)
+ *
+ * Bảng màu thương hiệu:
+ * - Đỏ đô chính (Primary Crimson): #8B1A4A (WCAG AAA 8.5:1 trên nền trắng)
+ * - Đỏ đô đậm (Deep Crimson):      #611736
+ * - Hổ phách nhấn (Amber Accent):  #F59E0B
+ * - Nền trắng (Pure White):        #FFFFFF
+ */
+
+:root {
+  /* Core Brand Palette */
+  --ums-primary: #8B1A4A;
+  --ums-primary-dark: #611736;
+  --ums-accent: #F59E0B;
+  --ums-accent-dark: #D97706;
+  --ums-accent-light: #FEF3C7;
+  --ums-white: #FFFFFF;
+
+  /* Full UMS Crimson Scale (matching tailwind.config.js) */
+  --ums-50: #FDF2F6;
+  --ums-100: #FCE7F0;
+  --ums-200: #FACFE2;
+  --ums-300: #F6A5C8;
+  --ums-400: #EE6FA4;
+  --ums-500: #DF3B7E;
+  --ums-600: #B91C5C;
+  --ums-700: #8B1A4A;
+  --ums-800: #74173F;
+  --ums-900: #611736;
+  --ums-950: #3C081E;
+
+  /* Surface & Text Tokens */
+  --ums-bg-page: #F8FAFC;
+  --ums-bg-card: #FFFFFF;
+  --ums-border-subtle: #E2E8F0;
+  --ums-text-main: #0F172A;
+  --ums-text-muted: #475569;
+
+  /* Typography & Geometry */
+  --ums-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ums-radius-sm: 0.5rem;
+  --ums-radius-md: 0.75rem;
+  --ums-radius-lg: 1rem;
+  --ums-radius-xl: 1.25rem;
+  --ums-shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  --ums-shadow-subtle: 0 2px 8px 0 rgba(139, 26, 74, 0.06);
+}

@@ -1,0 +1,13 @@
+# Minimal Clean Dependencies for UMS Smart Growth Hub
+# 100% Offline Core AI & Multi-Role Web Platform
+
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+reportlab>=4.1.0
+scikit-learn>=1.4.0
+numpy>=1.26.0
+unidecode>=1.3.0
+httpx>=0.27.0
+pytest>=8.0.0
+jinja2>=3.1.0

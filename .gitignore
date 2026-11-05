@@ -1,0 +1,34 @@
+# Dependencies & build
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.firebase/
+coverage/
+
+# Secrets — KHÔNG BAO GIỜ commit
+.env
+.env.*
+!.env.example
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+tools/backup/keys/
+
+# Dữ liệu thật của học sinh/giáo viên — chỉ lưu trong bản backup zip, không lên GitHub
+ums-logbook/data/*.csv
+ums-logbook/data/*.xlsx
+ums-logbook/data/*.xls
+ums-logbook/data/class_data.json
+ums-logbook/*.xls
+ums-logbook/*.pdf
+backups/
+
+# Office/OS rác
+~$*
+*.tmp
+Thumbs.db
+desktop.ini
+.DS_Store

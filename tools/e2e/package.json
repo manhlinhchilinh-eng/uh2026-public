@@ -1,0 +1,12 @@
+{
+  "name": "uh2026-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "node smoke_dev.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "playwright-core": "^1.48.0"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Sổ Điểm Khối 9 — ENG9 HUB</title>
+  <path fill="#FFFFFF" d="M64 8 H192 A56 56 0 0 1 248 64 V192 A56 56 0 0 1 192 248 H64 A56 56 0 0 1 8 192 V64 A56 56 0 0 1 64 8 Z"/>
+  <path fill="#611736" d="M56 132 H60 A24 24 0 0 1 84 156 V190 A10 10 0 0 1 74 200 H42 A10 10 0 0 1 32 190 V156 A24 24 0 0 1 56 132 Z M41 212 H215 A9 9 0 0 1 224 221 V221 A9 9 0 0 1 215 230 H41 A9 9 0 0 1 32 221 V221 A9 9 0 0 1 41 212 Z"/>
+  <path fill="#8B1A4A" d="M126 88 H130 A24 24 0 0 1 154 112 V190 A10 10 0 0 1 144 200 H112 A10 10 0 0 1 102 190 V112 A24 24 0 0 1 126 88 Z M196 36 H200 A24 24 0 0 1 224 60 V190 A10 10 0 0 1 214 200 H182 A10 10 0 0 1 172 190 V60 A24 24 0 0 1 196 36 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M32 68 A34 34 0 1 0 100 68 A34 34 0 1 0 32 68 Z M66 52 L82 68 L66 84 L50 68 Z"/>
+</svg>

@@ -1,0 +1,650 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased selection:bg-ums-100 selection:text-ums-900;
+  }
+}
+
+/* Custom scrollbars for compact logbook tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   MOET-STANDARD A4 LANDSCAPE PRINT & PDF ENGINE STYLES
+   ========================================================================== */
+
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@media print {
+  /* 1. Global Reset & Print Isolation */
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Times New Roman', Times, 'Liberation Serif', serif !important;
+    font-size: 8pt !important;
+    line-height: 1.2 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 2. Hide Non-Printable Elements */
+  header,
+  nav,
+  aside,
+  footer,
+  .no-print,
+  .print\:hidden,
+  button,
+  input,
+  select,
+  .app-header,
+  .app-sidebar,
+  .app-bottom-nav {
+    display: none !important;
+  }
+
+  /* 3. Modal Container Print Override */
+  .pdf-modal-backdrop {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .pdf-modal-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  /* 4. MOET Table & Layout */
+  #moet-print-area {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .moet-logbook-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+
+  .moet-logbook-table th,
+  .moet-logbook-table td {
+    border: 0.5pt solid #000000 !important;
+    padding: 2.5px 3px !important;
+    color: #000000 !important;
+  }
+
+  .moet-logbook-table thead {
+    display: table-header-group !important;
+  }
+
+  .moet-logbook-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 5. Page Breaks */
+  .moet-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .moet-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* ==========================================================================
+   CINEMATIC LOGIN MOTION SUITE (P4.4 — Orbital Arcs, Comet Trails, Kinetic Text)
+   Respects prefers-reduced-motion: reduce
+   ========================================================================== */
+
+@keyframes login-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes login-orbit-cw {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes login-orbit-ccw {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes login-comet-dash {
+  0% {
+    stroke-dashoffset: 420;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.95;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes login-node-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes login-line-flow {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes login-kinetic-word {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes login-laser-sweep {
+  0% {
+    transform: translateX(-35%) scaleX(0.6);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(0%) scaleX(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(35%) scaleX(0.6);
+    opacity: 0.4;
+  }
+}
+
+@keyframes login-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes login-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.animate-login-card {
+  animation: login-card-enter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-orbit-cw {
+  transform-origin: 600px 330px;
+  animation: login-orbit-cw 22s linear infinite;
+}
+
+.animate-orbit-ccw {
+  transform-origin: 600px 330px;
+  animation: login-orbit-ccw 28s linear infinite;
+}
+
+.animate-orbit-fast {
+  transform-origin: 600px 330px;
+  animation: login-orbit-cw 14s linear infinite;
+}
+
+.animate-comet-trail {
+  stroke-dasharray: 95 340;
+  animation: login-comet-dash 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-login-float {
+  animation: login-node-float 6s ease-in-out infinite;
+}
+
+.animate-login-line {
+  stroke-dasharray: 6 6;
+  animation: login-line-flow 8s linear infinite;
+}
+
+.animate-kinetic-word {
+  animation: login-kinetic-word 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-laser-sweep {
+  animation: login-laser-sweep 3.2s ease-in-out infinite;
+}
+
+.animate-caret-blink {
+  animation: login-caret-blink 1s steps(1) infinite;
+}
+
+.animate-login-shake,
+.animate-shake {
+  animation: login-shake 0.38s ease-in-out;
+}
+
+/* ==========================================================================
+   2D UMS CAMPUS 4-LAYER GPU ARCHITECTURAL UNFOLD & RISE (60fps-120fps)
+   1) Blueprint Sketch Outline (0.0s - 1.8s)
+   2) Layer 1: Central Rotunda "Create Opportunities Together" rises (0.12s - 1.75s)
+   3) Layer 2: Main V-Building A2 unfolds from center & rises (0.40s - 2.45s)
+   4) Layer 3: Lotus Pond (Left) & Building A1 (Right) unfold & rise (1.00s - 2.95s)
+   5) Layer 4: Pastel Skyline rises behind A2 roof (1.50s - 3.45s)
+   ========================================================================== */
+
+@keyframes ums-gpu-rotunda-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 88%, 0) scale(0.76);
+  }
+  22% {
+    opacity: 1;
+  }
+  78% {
+    transform: translate3d(0, -1.2%, 0) scale(1.012);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0%, 0) scale(1);
+  }
+}
+
+@keyframes ums-gpu-a2-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 72%, 0) scale(0.84);
+  }
+  18% {
+    opacity: 1;
+  }
+  80% {
+    transform: translate3d(0, -0.8%, 0) scale(1.006);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0%, 0) scale(1);
+  }
+}
+
+@keyframes ums-gpu-a2-unfold {
+  0% {
+    clip-path: inset(0% 45% 0% 46%);
+  }
+  100% {
+    clip-path: inset(0% 0% 0% 0%);
+  }
+}
+
+@keyframes ums-gpu-sides-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 68%, 0) scale(0.88);
+  }
+  20% {
+    opacity: 1;
+  }
+  82% {
+    transform: translate3d(0, -0.5%, 0) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0%, 0) scale(1);
+  }
+}
+
+@keyframes ums-gpu-sides-unfold {
+  0% {
+    clip-path: inset(0% 24% 0% 25%);
+  }
+  100% {
+    clip-path: inset(0% 0% 0% 0%);
+  }
+}
+
+@keyframes ums-gpu-skyline-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 58%, 0) scale(0.90);
+  }
+  25% {
+    opacity: 1;
+  }
+  84% {
+    transform: translate3d(0, -0.5%, 0) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0%, 0) scale(1);
+  }
+}
+
+@keyframes ums-blueprint-sketch {
+  0% {
+    stroke-dashoffset: 1100;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 0.85;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes ums-foundation-expand {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.04);
+  }
+  20% {
+    opacity: 1;
+    transform: scaleX(1.02);
+  }
+  78% {
+    opacity: 0.75;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes ums-portal-left-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(0px, 0, 0) scaleY(0.25);
+  }
+  14% {
+    opacity: 1;
+    transform: translate3d(-35px, 0, 0) scaleY(1);
+  }
+  82% {
+    opacity: 0.88;
+    transform: translate3d(-430px, 0, 0) scaleY(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-490px, 0, 0) scaleY(0.35);
+  }
+}
+
+@keyframes ums-portal-right-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(0px, 0, 0) scaleY(0.25);
+  }
+  14% {
+    opacity: 1;
+    transform: translate3d(35px, 0, 0) scaleY(1);
+  }
+  82% {
+    opacity: 0.88;
+    transform: translate3d(405px, 0, 0) scaleY(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(438px, 0, 0) scaleY(0.35);
+  }
+}
+
+@keyframes login-campus-trace {
+  0% {
+    stroke-dashoffset: 680;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.95;
+  }
+  100% {
+    stroke-dashoffset: -680;
+    opacity: 0;
+  }
+}
+
+@keyframes login-campus-window {
+  0%, 100% {
+    opacity: 0;
+  }
+  45%, 60% {
+    opacity: 0.78;
+  }
+}
+
+@keyframes login-campus-firefly {
+  0% {
+    transform: translateY(0px) translateX(0px) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.92;
+  }
+  75% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-42px) translateX(8px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes login-campus-birds {
+  0%, 100% {
+    transform: translate(0px, 0px);
+  }
+  50% {
+    transform: translate(8px, -4px);
+  }
+}
+
+.animate-ums-layer-rotunda {
+  transform-origin: 53.7% 100%;
+  animation: ums-gpu-rotunda-rise 1.65s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.animate-ums-layer-a2-rise {
+  transform-origin: 53.5% 100%;
+  animation: ums-gpu-a2-rise 2.05s cubic-bezier(0.22, 1, 0.36, 1) 0.40s both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.animate-ums-layer-a2-unfold {
+  animation: ums-gpu-a2-unfold 2.05s cubic-bezier(0.22, 1, 0.36, 1) 0.40s both;
+  will-change: clip-path;
+}
+
+.animate-ums-layer-sides-rise {
+  transform-origin: 50% 100%;
+  animation: ums-gpu-sides-rise 1.95s cubic-bezier(0.22, 1, 0.36, 1) 1.00s both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.animate-ums-layer-sides-unfold {
+  animation: ums-gpu-sides-unfold 1.95s cubic-bezier(0.22, 1, 0.36, 1) 1.00s both;
+  will-change: clip-path;
+}
+
+.animate-ums-layer-skyline-rise {
+  transform-origin: 53.5% 75%;
+  animation: ums-gpu-skyline-rise 1.95s cubic-bezier(0.22, 1, 0.36, 1) 1.50s both;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.animate-ums-blueprint {
+  stroke-dasharray: 1100;
+  animation: ums-blueprint-sketch 2.1s cubic-bezier(0.22, 1, 0.36, 1) 0.02s both;
+}
+
+.animate-ums-foundation {
+  transform-origin: 503px 518px;
+  transform-box: view-box;
+  animation: ums-foundation-expand 2.6s cubic-bezier(0.22, 1, 0.36, 1) 0s both;
+  will-change: transform, opacity;
+}
+
+.animate-ums-curtain-left {
+  transform-origin: 503px 520px;
+  transform-box: view-box;
+  animation: ums-portal-left-sweep 2.5s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+  will-change: transform, opacity;
+}
+
+.animate-ums-curtain-right {
+  transform-origin: 503px 520px;
+  transform-box: view-box;
+  animation: ums-portal-right-sweep 2.5s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+  will-change: transform, opacity;
+}
+
+.animate-campus-trace {
+  stroke-dasharray: 150 680;
+  animation: login-campus-trace 6.4s cubic-bezier(0.4, 0, 0.2, 1) 2.2s infinite both;
+}
+
+.animate-campus-window {
+  opacity: 0;
+  animation: login-campus-window 5.2s ease-in-out infinite both;
+  will-change: opacity;
+}
+
+.animate-campus-firefly {
+  opacity: 0;
+  animation: login-campus-firefly 5.8s ease-in-out infinite both;
+  will-change: transform, opacity;
+}
+
+.animate-campus-birds {
+  animation: login-campus-birds 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-login-card,
+  .animate-orbit-cw,
+  .animate-orbit-ccw,
+  .animate-orbit-fast,
+  .animate-comet-trail,
+  .animate-login-float,
+  .animate-login-line,
+  .animate-kinetic-word,
+  .animate-laser-sweep,
+  .animate-caret-blink,
+  .animate-login-shake,
+  .animate-shake,
+  .animate-ums-layer-rotunda,
+  .animate-ums-layer-a2-rise,
+  .animate-ums-layer-a2-unfold,
+  .animate-ums-layer-sides-rise,
+  .animate-ums-layer-sides-unfold,
+  .animate-ums-layer-skyline-rise,
+  .animate-ums-blueprint,
+  .animate-ums-foundation,
+  .animate-ums-curtain-left,
+  .animate-ums-curtain-right,
+  .animate-campus-trace,
+  .animate-campus-window,
+  .animate-campus-firefly,
+  .animate-campus-birds,
+  .login-anim-bg * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

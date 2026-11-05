@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Hồ Sơ Năng Lực — E-PORTFOLIO</title>
+  <path fill="#FFFFFF" d="M64 8 H192 A56 56 0 0 1 248 64 V192 A56 56 0 0 1 192 248 H64 A56 56 0 0 1 8 192 V64 A56 56 0 0 1 64 8 Z"/>
+  <path fill="#611736" d="M76 28 H122 V74 L68 128 L122 182 V228 H76 L28 180 V76 Z"/>
+  <path fill="#8B1A4A" d="M134 28 H180 L228 76 V180 L180 228 H134 V182 L188 128 L134 74 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M128 92 L164 128 L128 164 L92 128 Z M116 128 A12 12 0 1 0 140 128 A12 12 0 1 0 116 128 Z"/>
+</svg>

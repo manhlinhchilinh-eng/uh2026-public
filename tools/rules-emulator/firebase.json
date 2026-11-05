@@ -1,0 +1,12 @@
+{
+  "firestore": {},
+  "emulators": {
+    "firestore": {
+      "port": 8091
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  }
+}

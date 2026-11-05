@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Dạy Bằng Tiếng Anh — UMS+ ESL</title>
+  <path fill="#FFFFFF" d="M64 8 H192 A56 56 0 0 1 248 64 V192 A56 56 0 0 1 192 248 H64 A56 56 0 0 1 8 192 V64 A56 56 0 0 1 64 8 Z"/>
+  <path fill="#611736" fill-rule="evenodd" d="M56 28 H124 A32 32 0 0 1 156 60 V128 A8 8 0 0 1 148 136 H56 A32 32 0 0 1 24 104 V60 A32 32 0 0 1 56 28 Z M56 136 V168 L88 136 Z M66 82 A24 24 0 1 0 114 82 A24 24 0 1 0 66 82 Z"/>
+  <path fill="#8B1A4A" fill-rule="evenodd" d="M108 112 H200 A32 32 0 0 1 232 144 V180 A32 32 0 0 1 200 212 H132 A32 32 0 0 1 100 180 V120 A8 8 0 0 1 108 112 Z M168 212 L200 240 V212 Z M133 142 H199 A7 7 0 0 1 206 149 V149 A7 7 0 0 1 199 156 H133 A7 7 0 0 1 126 149 V149 A7 7 0 0 1 133 142 Z M133 168 H175 A7 7 0 0 1 182 175 V175 A7 7 0 0 1 175 182 H133 A7 7 0 0 1 126 175 V175 A7 7 0 0 1 133 168 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M166 64 A30 30 0 1 0 226 64 A30 30 0 1 0 166 64 Z M196 50 L210 64 L196 78 L182 64 Z"/>
+</svg>

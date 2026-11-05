@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UMS Smart Growth Hub — Nền tảng Hồ sơ Năng lực Số THCS Ngoại ngữ</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Chart.js for interactive competency spider charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar with Role Switcher -->
+  <header class="navbar">
+    <div class="navbar-container">
+      <a href="/" class="navbar-brand">
+        <span class="brand-badge">UMS • ULIS</span>
+        <div class="brand-text">
+          <h1>UMS SMART GROWTH HUB</h1>
+          <p>Trường THCS Ngoại ngữ — Đại học Quốc gia Hà Nội</p>
+        </div>
+      </a>
+
+      <!-- 3-Role Switcher -->
+      <div class="role-switcher-container">
+        <button class="role-btn active" data-role="student" id="role-btn-student">
+          <span>🎓</span> Học sinh
+        </button>
+        <button class="role-btn" data-role="teacher" id="role-btn-teacher">
+          <span>👩‍🏫</span> Giáo viên
+        </button>
+        <button class="role-btn" data-role="parent" id="role-btn-parent">
+          <span>👨‍👩‍👧</span> Phụ huynh
+        </button>
+      </div>
+
+      <!-- Persona Selector (Grades 6-9) -->
+      <div class="persona-selector">
+        <label for="persona-select" style="font-size: 0.8rem; color: #cbd5e1;">Hồ sơ mẫu:</label>
+        <select id="persona-select" class="persona-select">
+          <option value="UMS-8A1-012" selected>Trần Đức Anh (8A1 - Tranh biện & Tiếng Pháp)</option>
+          <option value="UMS-9A1-001">Phạm Quỳnh Anh (9A1 - Capstone & Chuyên CNN)</option>
+          <option value="UMS-7A2-005">Nguyễn Mai Chi (7A2 - U-STEM & Tiếng Đức)</option>
+          <option value="UMS-6A1-018">Lê Hoàng Nam (6A1 - Môi trường & Tiếng Nhật)</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-wrapper">
+
+    <!-- ====================================================================
+         1. STUDENT VIEW
+         ==================================================================== -->
+    <section id="student-view" class="view-section active">
+      <!-- Student Hero Banner -->
+      <div class="student-hero" id="student-hero">
+        <div class="avatar-circle" id="student-avatar">ĐA</div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <h2 style="font-size: 1.6rem; font-weight: 800;" id="student-name">Trần Đức Anh</h2>
+            <span class="skill-badge gold" id="student-code-badge">Mã: UMS-8A1-012</span>
+            <span class="skill-badge" id="student-class-badge">Lớp 8A1 (Khối 8)</span>
+          </div>
+          <p style="margin-top: 0.25rem; font-size: 0.9rem; opacity: 0.9;" id="student-target">
+            Mục tiêu: THPT Chuyên Ngoại ngữ (CNN - ULIS) — Khối Chuyên Anh & Song ngữ Pháp
+          </p>
+          <div class="student-info-meta">
+            <span class="meta-chip" id="student-gpa">GPA: <b>9.1/10</b></span>
+            <span class="meta-chip" id="student-cefr">CEFR: <b>B2 (IELTS 7.0)</b></span>
+            <span class="meta-chip" id="student-clubs">CLB: <b>UMS Debate Club, U-Press</b></span>
+            <span class="meta-chip" id="student-teacher">GVCN: <b>Cô Đỗ Tuệ Uyên</b></span>
+          </div>
+        </div>
+        <button class="btn btn-gold" id="btn-open-submit-modal">
+          <span>➕</span> Nộp dự án mới
+        </button>
+      </div>
+
+      <!-- Student Navigation Tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-target="tab-vault">📦 Kho Dự án (Project Vault)</button>
+        <button class="sub-tab-btn" data-target="tab-radar">🕸️ Biểu đồ Năng lực (Radar GDPT 2018)</button>
+        <button class="sub-tab-btn" data-target="tab-passport">📜 Hộ chiếu Năng lực Số (Digital Passport)</button>
+      </div>
+
+      <!-- Subtab: Project Vault -->
+      <div id="tab-vault" class="sub-tab-content">
+        <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; max-width: 500px;">
+              <input type="text" id="vault-search-input" class="form-input" placeholder="Tìm kiếm dự án theo tên, từ khóa hoặc kỹ năng...">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="vault-category-filter" class="form-select" style="width: auto;">
+                <option value="all">Tất cả thể loại</option>
+                <option value="english_presentation">Thuyết trình Tiếng Anh</option>
+                <option value="stem_scientific">Khoa học & STEM</option>
+                <option value="social_humanities">Văn hóa & Xã hội</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="vault-projects-list">
+          <!-- Project Cards Loaded by JavaScript -->
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted);">Đang tải danh mục dự án...</div>
+        </div>
+      </div>
+
+      <!-- Subtab: Radar Chart -->
+      <div id="tab-radar" class="sub-tab-content" style="display: none;">
+        <div class="grid-2">
+          <div class="glass-panel card-body" style="display: flex; flex-direction: column; align-items: center;">
+            <h3 class="card-title" style="margin-bottom: 1rem;">🕸️ Biểu đồ Mạng nhện Năng lực GDPT 2018</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">
+              Đánh giá tích lũy trên 15 chỉ số năng lực cốt lõi và phẩm chất học sinh UMS
+            </p>
+            <div style="width: 100%; max-width: 480px; position: relative;">
+              <canvas id="studentRadarCanvas"></canvas>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+              <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+                <input type="checkbox" id="toggle-benchmark" checked> So sánh Chuẩn Khối
+              </label>
+            </div>
+          </div>
+
+          <div class="glass-panel card-body">
+            <h3 class="card-title" style="margin-bottom: 1rem;">📊 Chi tiết 15 Chỉ số Thành phần</h3>
+            <div id="radar-breakdown-details" style="font-size: 0.9rem;">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab: Digital Passport -->
+      <div id="tab-passport" class="sub-tab-content" style="display: none;">
+        <div class="glass-panel card-body passport-sheet" style="max-width: 900px; margin: 0 auto; background: #ffffff; border: 2px solid var(--accent-gold);">
+          <!-- Letterhead -->
+          <div style="text-align: center; border-bottom: 2px solid var(--accent-gold); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <p style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy); text-transform: uppercase;">
+              ĐẠI HỌC QUỐC GIA HÀ NỘI — TRƯỜNG ĐẠI HỌC NGOẠI NGỮ
+            </p>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-navy);">
+              TRƯỜNG THCS NGOẠI NGỮ (ULIS MIDDLE SCHOOL - UMS)
+            </h2>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--accent-gold-dark); margin-top: 0.5rem;">
+              HỘ CHIẾU NĂNG LỰC SỐ HỌC SINH (STUDENT DIGITAL PASSPORT)
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              Định hướng liên thông THPT Chuyên Ngoại ngữ (CNN - ULIS) & Hệ sinh thái ĐHQGHN
+            </p>
+          </div>
+
+          <!-- Student Passport Metadata -->
+          <div id="passport-content-body">
+            <!-- Loaded dynamically -->
+          </div>
+
+          <!-- Actions -->
+          <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+            <button class="btn btn-secondary" onclick="window.print()">
+              <span>🖨️</span> In Hộ chiếu
+            </button>
+            <a id="passport-pdf-download-btn" class="btn btn-gold" href="#" target="_blank">
+              <span>📥</span> Tải File PDF Chính thức
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         2. TEACHER VIEW
+         ==================================================================== -->
+    <section id="teacher-view" class="view-section">
+      <!-- Teacher Header -->
+      <div class="glass-panel card-header" style="margin-bottom: 1.5rem; background: var(--primary-navy); color: #fff;">
+        <div>
+          <h2 style="font-size: 1.4rem; font-weight: 700;">👩‍🏫 Bảng Điều Khiển Sư Phạm — Lớp 8A1 & 9A1</h2>
+          <p style="font-size: 0.85rem; color: #cbd5e1;">Giáo viên: Cô Đỗ Tuệ Uyên — Tổ trưởng Tiếng Anh & GVCN</p>
+        </div>
+        <div>
+          <span class="skill-badge gold">Năm học 2025 - 2026</span>
+        </div>
+      </div>
+
+      <!-- Teacher Navigation Tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-target="tab-teacher-class">📊 Quản lý Lớp học</button>
+        <button class="sub-tab-btn" data-target="tab-teacher-rubric">📝 Chấm Rubric Dự án (Split-Screen)</button>
+        <button class="sub-tab-btn" data-target="tab-teacher-report">🤖 Sinh Nhận xét Học kỳ AI</button>
+      </div>
+
+      <!-- Teacher Subtab 1: Class Dashboard -->
+      <div id="tab-teacher-class" class="sub-tab-content">
+        <!-- Stats summary -->
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+          <div class="glass-panel card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--primary-navy);" id="teacher-total-students">35</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Sĩ số Lớp 8A1</div>
+          </div>
+          <div class="glass-panel card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-green);">94.3%</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Tỷ lệ Nộp Dự án Đúng hạn</div>
+          </div>
+          <div class="glass-panel card-body" style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-gold-dark);">9.1 / 10</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Điểm Trung bình Rubric GDPT</div>
+          </div>
+        </div>
+
+        <!-- Student Roster Table -->
+        <div class="glass-panel">
+          <div class="card-header">
+            <h3 class="card-title">📋 Danh sách Học sinh & Tiến độ Đánh giá</h3>
+          </div>
+          <div class="card-body" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;" id="teacher-roster-table">
+              <thead>
+                <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid var(--border-subtle);">
+                  <th style="padding: 0.75rem;">Mã HS</th>
+                  <th style="padding: 0.75rem;">Họ và Tên</th>
+                  <th style="padding: 0.75rem;">Lớp</th>
+                  <th style="padding: 0.75rem;">Ngoại ngữ 2</th>
+                  <th style="padding: 0.75rem;">GPA</th>
+                  <th style="padding: 0.75rem;">Trạng thái Dự án</th>
+                  <th style="padding: 0.75rem; text-align: center;">Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="teacher-roster-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher Subtab 2: Rubric Grading Split-Screen -->
+      <div id="tab-teacher-rubric" class="sub-tab-content" style="display: none;">
+        <div class="split-workspace">
+          <!-- Left: Submission Reader -->
+          <div class="glass-panel card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h3 class="card-title">📖 Minh chứng Bài nộp Dự án</h3>
+              <select id="teacher-rubric-project-select" class="form-select" style="width: auto; max-width: 250px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div id="teacher-submission-preview" class="submission-preview">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- Right: Rubric Grading Panel -->
+          <div class="glass-panel card-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 class="card-title">⚖️ Bảng Điểm Rubric (Thang 10)</h3>
+              <button class="btn btn-sm btn-gold" id="btn-ai-auto-grade">
+                <span>⚡</span> AI Chấm đề xuất
+              </button>
+            </div>
+
+            <!-- 4 Criteria Sliders -->
+            <div class="rubric-slider-group">
+              <div class="rubric-slider-header">
+                <span>1. Chuyên môn & Chiều sâu (Max 3.0)</span>
+                <span id="score-val-c1" style="font-weight: 800; color: var(--primary-navy);">2.8</span>
+              </div>
+              <input type="range" id="slider-c1" min="0" max="3.0" step="0.1" value="2.8" style="width: 100%;">
+            </div>
+
+            <div class="rubric-slider-group">
+              <div class="rubric-slider-header">
+                <span>2. Ngôn ngữ & Diễn đạt (Max 2.5)</span>
+                <span id="score-val-c2" style="font-weight: 800; color: var(--primary-navy);">2.4</span>
+              </div>
+              <input type="range" id="slider-c2" min="0" max="2.5" step="0.1" value="2.4" style="width: 100%;">
+            </div>
+
+            <div class="rubric-slider-group">
+              <div class="rubric-slider-header">
+                <span>3. Sáng tạo & GQ Vấn đề (Max 2.5)</span>
+                <span id="score-val-c3" style="font-weight: 800; color: var(--primary-navy);">2.3</span>
+              </div>
+              <input type="range" id="slider-c3" min="0" max="2.5" step="0.1" value="2.3" style="width: 100%;">
+            </div>
+
+            <div class="rubric-slider-group">
+              <div class="rubric-slider-header">
+                <span>4. Hợp tác & Liêm chính (Max 2.0)</span>
+                <span id="score-val-c4" style="font-weight: 800; color: var(--primary-navy);">1.9</span>
+              </div>
+              <input type="range" id="slider-c4" min="0" max="2.0" step="0.1" value="1.9" style="width: 100%;">
+            </div>
+
+            <!-- Total Score Banner -->
+            <div style="background: #f1f5f9; padding: 0.75rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <span style="font-weight: 700;">TỔNG ĐIỂM RUBRIC:</span>
+              <span id="rubric-total-display" style="font-size: 1.4rem; font-weight: 800; color: var(--primary-navy);">9.4 / 10.0</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Lời nhận xét mang tính xây dựng của Giáo viên:</label>
+              <textarea id="teacher-feedback-input" class="form-textarea" placeholder="Nhập nhận xét sư phạm..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save-grade" style="width: 100%;">
+              <span>💾</span> Lưu & Đồng bộ Điểm Hồ sơ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher Subtab 3: AI Semester Report Generator -->
+      <div id="tab-teacher-report" class="sub-tab-content" style="display: none;">
+        <div class="glass-panel card-body" style="max-width: 1000px; margin: 0 auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 class="card-title">🤖 Bộ Sinh & Tinh Chỉnh Nhận Xét Học Kỳ AI</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">
+                Tự động tổng hợp dữ liệu dự án, đảm bảo 100% không rập khuôn và zero-placeholder.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <select id="report-student-select" class="form-select" style="width: auto;">
+                <!-- Populated dynamically -->
+              </select>
+              <button class="btn btn-gold" id="btn-generate-ai-report">
+                <span>✨</span> Sinh Nhận xét bằng AI
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Report Sections with Live Editing -->
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between;">
+              <span>I. Đánh giá Năng lực Chuyên môn & Ngoại ngữ:</span>
+              <span class="skill-badge">Phần 1</span>
+            </label>
+            <textarea id="report-sec-academic" class="form-textarea" style="min-height: 120px;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between;">
+              <span>II. Đánh giá Phẩm chất & Kỹ năng Mềm (GDPT 2018):</span>
+              <span class="skill-badge">Phần 2</span>
+            </label>
+            <textarea id="report-sec-qualities" class="form-textarea" style="min-height: 120px;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between;">
+              <span>III. Lời khuyên Định hướng Phát triển Lên Bậc THPT Chuyên Ngoại ngữ (CNN):</span>
+              <span class="skill-badge gold">Phần 3</span>
+            </label>
+            <textarea id="report-sec-orientation" class="form-textarea" style="min-height: 120px;"></textarea>
+          </div>
+
+          <!-- Zero Placeholder Audit Indicator -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #065f46; font-weight: 600;">
+              <span>🛡️</span> Kiểm tra Tính toàn vẹn: 0 Placeholder chưa xử lý (Đạt chuẩn sư phạm)
+            </div>
+            <span class="skill-badge" style="background: #059669; color: #fff; border: none;">VALIDATED</span>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button class="btn btn-secondary" id="btn-save-report-edits">
+              <span>💾</span> Lưu Bản Chỉnh sửa
+            </button>
+            <a id="btn-export-report-pdf" class="btn btn-primary" href="#" target="_blank">
+              <span>📥</span> Xuất PDF Nhận xét
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         3. PARENT VIEW
+         ==================================================================== -->
+    <section id="parent-view" class="view-section">
+      <!-- Parent Header -->
+      <div class="glass-panel card-header" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #0A2540 0%, #1e3a5f 100%); color: #fff;">
+        <div>
+          <h2 style="font-size: 1.4rem; font-weight: 700;" id="parent-greeting-title">👨‍👩‍👧 Cổng Thông Tin Phụ Huynh UMS</h2>
+          <p style="font-size: 0.85rem; color: #cbd5e1;" id="parent-greeting-subtitle">
+            Đồng hành cùng sự trưởng thành của con tại Trường THCS Ngoại ngữ
+          </p>
+        </div>
+        <div>
+          <span class="skill-badge gold">Kết nối 24/7 Nhà trường - Gia đình</span>
+        </div>
+      </div>
+
+      <!-- Parent Navigation Tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-target="tab-parent-timeline">📅 Dòng Thời Gian Trưởng Thành (Growth Timeline)</button>
+        <button class="sub-tab-btn" data-target="tab-parent-chat">💬 Trợ Lý Đồng Hành AI 24/7</button>
+      </div>
+
+      <!-- Parent Subtab 1: Growth Timeline -->
+      <div id="tab-parent-timeline" class="sub-tab-content">
+        <div class="grid-2-1">
+          <div>
+            <h3 class="card-title" style="margin-bottom: 1rem;">🌟 Hành Trình Trưởng Thành Của Con</h3>
+            <div id="parent-timeline-stream" class="timeline-container">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- Parent Quick Encouragement Sidebar -->
+          <div>
+            <div class="glass-panel card-body" style="position: sticky; top: 80px;">
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary-navy);">
+                💌 Góc Động Viên Gia Đình
+              </h4>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Gửi lời chúc hoặc thả tim để tiếp thêm động lực cho con trong các dự án học tập sắp tới!
+              </p>
+              <div class="form-group">
+                <textarea id="parent-cheer-message" class="form-textarea" style="min-height: 80px;" placeholder="Ví dụ: Bố mẹ rất tự hào về bài thuyết trình AI của con hôm nay!"></textarea>
+              </div>
+              <button class="btn btn-gold" id="btn-send-parent-cheer" style="width: 100%;">
+                <span>❤️</span> Gửi Lời Động Viên Đến Con
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parent Subtab 2: 24/7 AI Companion Chatbot -->
+      <div id="tab-parent-chat" class="sub-tab-content" style="display: none;">
+        <div class="glass-panel card-body" style="max-width: 950px; margin: 0 auto;">
+          <div style="margin-bottom: 1rem;">
+            <h3 class="card-title">💬 Trợ Lý AI Đồng Hành Nhà Trường - Gia Đình 24/7</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              Giải đáp nhanh quy chế, thời khóa biểu, hoạt động CLB và định hướng thi vào THPT Chuyên Ngoại ngữ (CNN).
+            </p>
+          </div>
+
+          <div class="chat-container">
+            <div class="chat-messages" id="chat-messages-box">
+              <div class="chat-bubble bot">
+                Dạ kính chào Quý Phụ huynh! Em là Trợ lý AI Đồng hành của Trường THCS Ngoại ngữ (UMS - ULIS). 
+                Quý Phụ huynh có thắc mắc gì về quy chế nề nếp, hoạt động câu lạc bộ, tiến độ dự án của con, hoặc định hướng thi chuyển cấp vào THPT Chuyên Ngoại ngữ (CNN) không ạ?
+              </div>
+            </div>
+
+            <!-- Quick Prompt Suggestions Chips -->
+            <div class="chat-chips">
+              <button class="chat-chip-btn" data-query="Lộ trình thi vào Chuyên Ngoại ngữ CNN?">
+                🎯 Lộ trình thi vào CNN?
+              </button>
+              <button class="chat-chip-btn" data-query="CLB Debate và Robotics sinh hoạt thế nào?">
+                🤖 Lịch sinh hoạt CLB?
+              </button>
+              <button class="chat-chip-btn" data-query="Quy chế đánh giá học sinh theo Thông tư 22?">
+                📌 Quy chế đánh giá?
+              </button>
+              <button class="chat-chip-btn" data-query="Làm thế nào để gặp cô giáo chủ nhiệm?">
+                📞 Liên hệ Giáo viên chủ nhiệm?
+              </button>
+            </div>
+
+            <!-- Chat Input Form -->
+            <div class="chat-input-row">
+              <input type="text" id="chat-input-field" class="form-input" placeholder="Nhập câu hỏi của Quý Phụ huynh tại đây..." style="flex: 1;">
+              <button class="btn btn-primary" id="btn-send-chat">
+                <span>Gửi</span> ➔
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Submit Project Modal Dialog -->
+  <div class="modal-overlay" id="submit-project-modal">
+    <div class="modal-card">
+      <div class="card-header">
+        <h3 class="card-title">📤 Nộp Sản Phẩm Dự Án Vào Vault</h3>
+        <button id="btn-close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+      <div class="card-body">
+        <form id="project-submission-form">
+          <div class="form-group">
+            <label class="form-label">Tên dự án / Báo cáo:</label>
+            <input type="text" id="submit-title" class="form-input" required placeholder="Ví dụ: AI in Future Education: Opportunities & Challenges">
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Thể loại dự án:</label>
+              <select id="submit-category" class="form-select">
+                <option value="english_presentation">Thuyết trình Tiếng Anh</option>
+                <option value="stem_scientific">Báo cáo Khoa học STEM</option>
+                <option value="social_humanities">Dự án Văn hóa & Xã hội</option>
+                <option value="general">Khác / Liên môn</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ngôn ngữ bài nộp:</label>
+              <select id="submit-language" class="form-select">
+                <option value="en">Tiếng Anh (English)</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="bilingual">Song ngữ Anh - Việt</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nội dung bài viết / Transcript thuyết trình:</label>
+            <textarea id="submit-content" class="form-textarea" style="min-height: 140px;" required placeholder="Dán toàn văn nội dung hoặc tóm tắt báo cáo dự án tại đây..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nhật ký phản tư cá nhân (Student Reflection):</label>
+            <textarea id="submit-reflection" class="form-textarea" style="min-height: 80px;" placeholder="Điều em tâm đắc nhất và bài học rút ra sau khi thực hiện dự án này là gì?"></textarea>
+          </div>
+
+          <!-- Pre-check alert area -->
+          <div id="pre-check-result-box" style="display: none; margin-bottom: 1rem; padding: 0.75rem; border-radius: var(--radius-md); font-size: 0.85rem;"></div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+            <button type="button" class="btn btn-secondary" id="btn-precheck-ai">
+              <span>⚡</span> Kiểm tra trước bằng AI
+            </button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Hủy</button>
+              <button type="submit" class="btn btn-gold" id="btn-confirm-submit">
+                <span>🚀</span> Nộp chính thức
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Luyện Tập Anh 9 — ENG9 PRACTICE</title>
+  <path fill="#FFFFFF" d="M64 8 H192 A56 56 0 0 1 248 64 V192 A56 56 0 0 1 192 248 H64 A56 56 0 0 1 8 192 V64 A56 56 0 0 1 64 8 Z"/>
+  <path fill="#611736" fill-rule="evenodd" d="M36 52 H84 L160 128 L84 204 H36 L112 128 Z"/>
+  <path fill="#8B1A4A" fill-rule="evenodd" d="M104 52 H152 L228 128 L152 204 H104 L180 128 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M54 104 L78 128 L54 152 L30 128 Z M174 54 A26 26 0 1 0 226 54 A26 26 0 1 0 174 54 Z M200 42 L212 54 L200 66 L188 54 Z"/>
+</svg>

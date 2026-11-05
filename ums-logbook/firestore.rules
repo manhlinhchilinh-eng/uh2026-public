@@ -1,0 +1,1059 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // 1. AUTHENTICATION & RBAC HELPER FUNCTIONS
+    // =========================================================================
+
+    /**
+     * Checks if the request is from an authenticated user.
+     */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /**
+     * Retrieves the Firestore user document for the authenticated caller.
+     */
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    /**
+     * Checks if the user document exists in Firestore.
+     */
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the authenticated user has a specific role.
+     * Supports both custom claims in JWT token (fast path) and Firestore profile document.
+     */
+    function hasRole(role) {
+      return isAuthenticated() && (
+        ('role' in request.auth.token && request.auth.token.role == role) ||
+        ('roles' in request.auth.token && role in request.auth.token.roles) ||
+        (userDocExists() && 'roles' in getUserDoc() && role in getUserDoc().roles)
+      );
+    }
+
+    /**
+     * Admin (BGH - Ban Giám Hiệu): Full administrative authority.
+     */
+    function isAdmin() {
+      return isAuthenticated() && (
+        ('admin' in request.auth.token && request.auth.token.admin == true) ||
+        hasRole('admin')
+      );
+    }
+
+    /**
+     * TPT (Tổng Phụ Trách): School-wide discipline supervisor.
+     */
+    function isTPT() {
+      return hasRole('tpt');
+    }
+
+    /**
+     * Teacher (GVCN, GVBM, TPT, or Admin): Has teaching or instructional authority.
+     */
+    function isTeacher() {
+      return isAdmin() || hasRole('gvcn') || hasRole('gvbm') || isTPT();
+    }
+
+    /**
+     * GVCN (Giáo Viên Chủ Nhiệm): Checks if user is the assigned homeroom teacher of classId.
+     * Admins automatically satisfy this check.
+     */
+    function isGVCN(classId) {
+      return isAuthenticated() && (
+        isAdmin() ||
+        (
+          hasRole('gvcn') && (
+            ('assignedClassId' in request.auth.token && request.auth.token.assignedClassId == classId) ||
+            (userDocExists() && 'assignedClassId' in getUserDoc() && getUserDoc().assignedClassId == classId)
+          )
+        )
+      );
+    }
+
+    /**
+     * Staff (BGH/Tổ trưởng, GVCN, GVBM, TPT). Phụ huynh & học sinh KHÔNG phải staff.
+     */
+    function isOffice() {
+      return hasRole('vanphong');
+    }
+
+    function isGiamThi() {
+      return hasRole('giamthi');
+    }
+
+    function myUsername() {
+      return userDocExists() ? getUserDoc().get('username', '') : '';
+    }
+
+    function isStaff() {
+      return isTeacher() || isGiamThi();
+    }
+
+    /**
+     * Học sinh / phụ huynh: danh sách hồ sơ HS được liên kết với tài khoản (doc ID trong /students và mã HS).
+     */
+    function linkedStudentDocIds() {
+      return userDocExists() ? getUserDoc().get('studentDocIds', []) : [];
+    }
+
+    function linkedStudentMhs() {
+      return userDocExists() ? getUserDoc().get('studentMhs', []) : [];
+    }
+
+    function isFamilyOf(studentDocId) {
+      return isAuthenticated() && (hasRole('parent') || hasRole('student')) && studentDocId in linkedStudentDocIds();
+    }
+
+    /**
+     * Validates 4-criteria period scoring rubric bounds at the database layer:
+     * - Học tập (Learning): 0.0 to 4.0
+     * - Kỷ luật (Discipline): 0.0 to 3.0
+     * - Vệ sinh / Ý thức (Hygiene): 0.0 to 2.0
+     * - Phong trào / Khác (Custom): 0.0 to 1.0
+     * - Tổng điểm (Total): 0.0 to 10.0
+     */
+    function isValidPeriodScores(scores) {
+      return scores.learning is number && scores.learning >= 0.0 && scores.learning <= 4.0 &&
+             scores.discipline is number && scores.discipline >= 0.0 && scores.discipline <= 3.0 &&
+             scores.hygiene is number && scores.hygiene >= 0.0 && scores.hygiene <= 2.0 &&
+             scores.customCriterion is number && scores.customCriterion >= 0.0 && scores.customCriterion <= 1.0 &&
+             scores.total is number && scores.total >= 0.0 && scores.total <= 10.0;
+    }
+
+    // =========================================================================
+    // 2. COLLECTION ACCESS CONTROL RULES
+    // =========================================================================
+
+    // -------------------------------------------------------------------------
+    // User Profiles (/users/{userId})
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      // User can read their own profile; Admin can read all profiles
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+
+      // Only Admin can create new user profiles
+      allow create: if isAuthenticated() && isAdmin();
+
+      // Admin can update all fields.
+      // Non-admin user can update ONLY safe profile fields (passwords, login timestamp)
+      // and CANNOT elevate roles, change username, email, or assignedClassId.
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          request.auth.uid == userId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'passwordHash',
+            'mustChangePassword',
+            'lastLoginAt',
+            'updatedAt'
+          ])
+        )
+      );
+      // (Liên kết PH/HS studentDocIds/studentMhs không nằm trong danh sách trên → chỉ Admin sửa được.)
+
+      // Only Admin can delete user accounts
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Classes & Students Roster Metadata
+    // -------------------------------------------------------------------------
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    match /students/{studentId} {
+      // Staff đọc toàn trường; PH/HS chỉ đọc hồ sơ của con/của mình
+      allow read: if isStaff() || isFamilyOf(studentId);
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Tiết ESL: trường `esl` trên doc tiết (không bắt buộc) — xem utils/eslPeriods.ts
+    function isValidEslTag(data) {
+      return !('esl' in data) || data.esl == null || (
+        data.esl is map &&
+        data.esl.level in ['elements', 'partial', 'full'] &&
+        data.esl.option in ['quick', 'clil'] &&
+        (!('objective' in data.esl) || (data.esl.objective is string && data.esl.objective.size() <= 300)) &&
+        (!('evidenceUrl' in data.esl) || (data.esl.evidenceUrl is string && data.esl.evidenceUrl.matches('^https://.*') && data.esl.evidenceUrl.size() <= 500)) &&
+        (!('strategies' in data.esl) || (data.esl.strategies is list && data.esl.strategies.size() <= 10))
+      );
+    }
+
+    // Bản ghi gọn tiết ESL (/esl_periods/{dailyId}_{periodIndex}) — dashboard ESL đọc ở đây, không quét sổ.
+    // GV chỉ ghi/xóa bản ghi tiết của mình; BGH mọi bản ghi.
+    match /esl_periods/{recordId} {
+      allow read: if isStaff();
+      allow create, update: if isAuthenticated() &&
+        request.resource.data.id == recordId &&
+        request.resource.data.keys().hasOnly(['id', 'dailyId', 'classId', 'date', 'academicYear', 'periodIndex', 'subject',
+          'teacherId', 'teacherName', 'level', 'option', 'objective', 'strategies', 'evidenceUrl', 'updatedAt']) &&
+        request.resource.data.level in ['elements', 'partial', 'full'] &&
+        request.resource.data.option in ['quick', 'clil'] &&
+        request.resource.data.date is string &&
+        (isAdmin() || (
+          isTeacher() &&
+          request.resource.data.teacherId == myUsername() &&
+          (resource == null || resource.data.teacherId == myUsername())
+        ));
+      allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == myUsername());
+    }
+
+    // System Settings (/system_settings/{settingId})
+    // -------------------------------------------------------------------------
+    match /system_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    function myAliases() {
+      return exists(/databases/$(database)/documents/teacher_aliases/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/teacher_aliases/$(request.auth.uid)).data.get('aliases', [])
+        : [];
+    }
+
+    function isValidSubstitution(subId, classId, periodIndex) {
+      return subId is string && subId.size() > 0 &&
+        exists(/databases/$(database)/documents/substitutions/$(subId)) &&
+        get(/databases/$(database)/documents/substitutions/$(subId)).data.get('status', '') == 'approved' &&
+        get(/databases/$(database)/documents/substitutions/$(subId)).data.get('substituteUid', '') == request.auth.uid &&
+        get(/databases/$(database)/documents/substitutions/$(subId)).data.get('classId', '') == classId &&
+        get(/databases/$(database)/documents/substitutions/$(subId)).data.get('periodIndex', 0) == int(periodIndex);
+    }
+
+    // Lớp & thứ của sổ lấy từ chính dailyId (`<lớp>_<yyyy-mm-dd>`), KHÔNG tin classId/dayOfWeek client gửi lên
+    // (trước đây GV gửi classId/dayOfWeek tùy ý là vượt được kiểm tra TKB).
+    function dailyClassId(dailyId) {
+      return dailyId.split('_')[0];
+    }
+
+    // Thứ theo quy ước app: 2 = Thứ Hai … 8 = Chủ nhật (timestamp.dayOfWeek(): 1 = Thứ Hai … 7 = CN)
+    function dailyDayOfWeek(dailyId) {
+      let d = dailyId.split('_')[1].split('-');
+      return timestamp.date(int(d[0]), int(d[1]), int(d[2])).dayOfWeek() + 1;
+    }
+
+    // GV bộ môn: chỉ tiết có tên mình trên TKB (slotMap). Tiết trống / không có TKB / Thứ 7–CN: chỉ GVCN lớp đó.
+    function isMyTkbSlot(classId, slotKey) {
+      return exists(/databases/$(database)/documents/schedules/$(classId)) &&
+        ('slotMap' in get(/databases/$(database)/documents/schedules/$(classId)).data) &&
+        (slotKey in get(/databases/$(database)/documents/schedules/$(classId)).data.slotMap) &&
+        (
+          (myUsername() != '' && get(/databases/$(database)/documents/schedules/$(classId)).data.slotMap[slotKey].get('teacherUsername', '') == myUsername()) ||
+          get(/databases/$(database)/documents/schedules/$(classId)).data.slotMap[slotKey].get('teacherName', '') in myAliases()
+        );
+    }
+
+    // GVCN ghi/ký mọi tiết lớp mình; GV khác: tiết của mình theo TKB hoặc dạy thay đã duyệt.
+    function canTeacherWritePeriod(dailyId, periodIndex) {
+      let classId = dailyClassId(dailyId);
+      let dow = dailyDayOfWeek(dailyId);
+      return request.resource.data.get('classId', classId) == classId &&
+        request.resource.data.get('dayOfWeek', dow) == dow && (
+          isGVCN(classId) ||
+          isValidSubstitution(request.resource.data.get('substitutionId', ''), classId, periodIndex) ||
+          (dow >= 2 && dow <= 7 && isMyTkbSlot(classId, string(dow) + '_' + periodIndex))
+        );
+    }
+
+    // Baseline điểm danh đầu giờ "trống" (sổ mới tạo khi GV bộ môn ghi tiết đầu tiên) — chưa ai điểm danh.
+    function isBlankBaseline(b) {
+      return b == null || (
+        b is map &&
+        !('reportedByName' in b) &&
+        b.get('absences', []).size() == 0 &&
+        b.get('earlyDepartures', []).size() == 0 &&
+        b.get('notes', '') == ''
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Daily Logbooks (/daily_logbooks/{dailyId}) & Atomic Periods Subcollection
+    // -------------------------------------------------------------------------
+    match /daily_logbooks/{dailyId} {
+      // Chỉ staff đọc sổ đầu bài (sổ chứa thông tin cả lớp). PH/HS xem qua cổng riêng (P2.6).
+      allow read: if isStaff();
+
+      // Tạo sổ: BGH, GVCN đúng lớp; GV khác được tạo sổ (khi ghi tiết đầu tiên) nhưng KHÔNG được kèm điểm danh đầu giờ.
+      allow create: if isAuthenticated() &&
+        request.resource.data.get('classId', '') == dailyClassId(dailyId) && (
+          isAdmin() || isGVCN(dailyClassId(dailyId)) ||
+          (isTeacher() &&
+           isBlankBaseline(request.resource.data.get('morningBaseline', null)) &&
+           isBlankBaseline(request.resource.data.get('afternoonBaseline', null)) &&
+           isBlankBaseline(request.resource.data.get('preSessionAttendance', null)))
+        );
+
+      // Update permitted by Admin, GVCN of the class, or any teacher
+      allow update: if isAuthenticated() && (
+        isAdmin() || isGVCN(resource.data.classId) ||
+        // GV khác: chỉ cập nhật trạng thái sổ khi ghi tiết (không sửa điểm danh đầu giờ của GVCN)
+        // + tóm tắt điểm danh đầu tiết `periodAttendance` (bảng Vắng/muộn hôm nay, tối đa 8 tiết)
+        (isTeacher() &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isCompleted', 'updatedAt', 'periodAttendance']) &&
+         (!('periodAttendance' in request.resource.data) || (
+           request.resource.data.periodAttendance is map &&
+           request.resource.data.periodAttendance.size() <= 8 &&
+           request.resource.data.periodAttendance.keys().hasOnly(['1', '2', '3', '4', '5', '6', '7', '8'])
+         )))
+      );
+
+      // Only Admin can delete logbook entries
+      allow delete: if isAuthenticated() && isAdmin();
+
+      // Subcollection: Atomic Period Entries (/daily_logbooks/{dailyId}/periods/{periodIndex})
+      match /periods/{periodIndex} {
+        allow read: if isStaff();
+
+        // Write permitted to Admin or any authorized Teacher,
+        // strictly enforcing 4-criteria scoring validation bounds and TKB slotMap rules at the database layer.
+        allow create, update: if isAuthenticated() &&
+                                isValidPeriodScores(request.resource.data.scores) &&
+                                isValidEslTag(request.resource.data) && (
+                                  isAdmin() || (
+                                    isTeacher() &&
+                                    request.resource.data.teacherId == myUsername() &&
+                                    (resource == null || resource.data.get('isSigned', false) != true ||
+                                     resource.data.get('teacherId', '') == myUsername()) &&
+                                    canTeacherWritePeriod(dailyId, periodIndex)
+                                  )
+                                );
+
+        allow delete: if isAuthenticated() && isAdmin();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Behavior Notes (/behavior_notes/{noteId})
+    // -------------------------------------------------------------------------
+    match /behavior_notes/{noteId} {
+      // Staff xem mọi ghi chú; PH/HS chỉ xem ghi chú của con/của mình
+      allow read: if isAuthenticated() && (
+        isStaff() ||
+        ((hasRole('parent') || hasRole('student')) && resource.data.studentId in linkedStudentMhs())
+      );
+
+      // Any teacher or TPT can create notes; authorId must strictly match authenticated user UID
+      allow create: if isAuthenticated() &&
+                      isStaff() &&
+                      request.resource.data.authorId == request.auth.uid &&
+                      request.resource.data.type in ['positive', 'negative'];
+
+      // Updates permitted to:
+      // 1. Admin
+      // 2. Original author (authorId cannot be reassigned; type must be valid)
+      // 3. Assigned GVCN of the student's class (acknowledgment fields only)
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (
+          resource.data.authorId == request.auth.uid &&
+          request.resource.data.authorId == resource.data.authorId &&
+          request.resource.data.type in ['positive', 'negative']
+        ) ||
+        (
+          isGVCN(resource.data.classId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'acknowledgedByGvcn',
+            'acknowledgedAt',
+            'acknowledgedBy',
+            'updatedAt'
+          ])
+        )
+      );
+
+      // Only the author or Admin can delete behavior notes
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.authorId == request.auth.uid
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Schedules / Timetables (/schedules/{classId})
+    // -------------------------------------------------------------------------
+    match /schedules/{classId} {
+      allow read: if isAuthenticated();
+      // Chỉ BGH cập nhật TKB (qua Cập nhật TKB → có lịch sử & hoàn tác)
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // Thông báo Văn phòng (/office_notices/{id}) — BGH & Văn phòng đăng; chỉ người nhận (recipientUids) đọc.
+    function validOfficeNotice(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 150 &&
+             d.body is string && d.body.size() > 0 && d.body.size() <= 5000 &&
+             d.recipientUids is list && d.recipientUids.size() > 0 && d.recipientUids.size() <= 300 &&
+             d.tags is list && d.remindBefore is list &&
+             (!('attachments' in d) || (d.attachments is list && d.attachments.size() <= 8)) &&
+             d.authorId == request.auth.uid && d.createdAt is number;
+    }
+    match /office_notices/{noticeId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || isOffice() ||
+        request.auth.uid in resource.data.recipientUids ||
+        resource.data.authorId == request.auth.uid
+      );
+      allow create: if (isAdmin() || isOffice()) && validOfficeNotice(request.resource.data);
+      allow update: if (isAdmin() || resource.data.authorId == request.auth.uid) && validOfficeNotice(request.resource.data);
+      allow delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+
+      // Tệp tải lên lưu ngay trong Firestore (không dùng Storage): /files/{fileId} + /chunks/{i}.
+      // Tải lên TRƯỚC khi tạo tin (tin chưa tồn tại) → chỉ BGH/Văn phòng tạo, chính chủ; đọc theo quyền đọc tin.
+      function canReadNoticeFiles() {
+        return isAdmin() || isOffice() || (
+          exists(/databases/$(database)/documents/office_notices/$(noticeId)) && (
+            request.auth.uid in get(/databases/$(database)/documents/office_notices/$(noticeId)).data.recipientUids ||
+            get(/databases/$(database)/documents/office_notices/$(noticeId)).data.authorId == request.auth.uid
+          )
+        );
+      }
+      match /files/{fileId} {
+        allow read: if isAuthenticated() && canReadNoticeFiles();
+        allow create: if (isAdmin() || isOffice()) &&
+          request.resource.data.authorId == request.auth.uid &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
+          request.resource.data.size is int && request.resource.data.size > 0 && request.resource.data.size <= 5242880 &&
+          request.resource.data.chunkCount is int && request.resource.data.chunkCount >= 1 && request.resource.data.chunkCount <= 8;
+        allow update: if false;
+        allow delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+
+        match /chunks/{chunkId} {
+          allow read: if isAuthenticated() && canReadNoticeFiles();
+          // Cùng batch với thông tin tệp (getAfter): chỉ người tạo tệp ghi khối, khối ≤ 750 KB, số khối khớp
+          allow create: if (isAdmin() || isOffice()) &&
+            getAfter(/databases/$(database)/documents/office_notices/$(noticeId)/files/$(fileId)).data.authorId == request.auth.uid &&
+            request.resource.data.data is bytes && request.resource.data.data.size() <= 750000 &&
+            request.resource.data.i is int && request.resource.data.i >= 0 &&
+            request.resource.data.i < getAfter(/databases/$(database)/documents/office_notices/$(noticeId)/files/$(fileId)).data.chunkCount;
+          allow update: if false;
+          allow delete: if isAdmin() ||
+            get(/databases/$(database)/documents/office_notices/$(noticeId)/files/$(fileId)).data.authorId == request.auth.uid;
+        }
+      }
+
+      match /acks/{ackUid} {
+        // Tự xác nhận cho chính mình, với tin gửi cho mình
+        allow create, update: if isAuthenticated() && request.auth.uid == ackUid &&
+          request.resource.data.uid == ackUid &&
+          request.auth.uid in get(/databases/$(database)/documents/office_notices/$(noticeId)).data.recipientUids;
+        // Người gửi / BGH / Văn phòng xem ai đã đọc, đã làm
+        allow read: if isAuthenticated() && (
+          request.auth.uid == ackUid || isAdmin() || isOffice() ||
+          get(/databases/$(database)/documents/office_notices/$(noticeId)).data.authorId == request.auth.uid
+        );
+        allow delete: if false;
+      }
+    }
+
+    // Hành chính – Văn bản – Quy trình (/admin_docs/{id}): chỉ thông tin + link https (Drive…), không lưu file.
+    // Nhân sự + Văn phòng xem; BGH / Văn phòng thêm, sửa, xoá. PH/HS không xem.
+    function validAdminDoc(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 200 &&
+             d.category in ['van_ban', 'huong_dan', 'quy_trinh', 'bieu_mau'] &&
+             d.url is string && d.url.size() <= 1000 && (d.url == '' || d.url.matches('^https://.+')) &&
+             (!('attachments' in d) || (d.attachments is list && d.attachments.size() <= 8)) &&
+             d.description is string && d.description.size() <= 2000 &&
+             d.docNumber is string && d.docNumber.size() <= 60 &&
+             d.issuedDate is string && d.pinned is bool &&
+             d.authorId is string && d.createdAt is number && d.updatedAt is number;
+    }
+    match /admin_docs/{docId} {
+      allow read: if isStaff() || isOffice();
+      allow create: if (isAdmin() || isOffice()) && validAdminDoc(request.resource.data) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update: if (isAdmin() || isOffice()) && validAdminDoc(request.resource.data) &&
+        request.resource.data.authorId == resource.data.authorId &&
+        request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin() || isOffice();
+
+      match /files/{fileId} {
+        allow read: if isStaff() || isOffice();
+        allow create: if (isAdmin() || isOffice()) &&
+          request.resource.data.authorId == request.auth.uid &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
+          request.resource.data.size is int && request.resource.data.size > 0 && request.resource.data.size <= 5242880 &&
+          request.resource.data.chunkCount is int && request.resource.data.chunkCount >= 1 && request.resource.data.chunkCount <= 8;
+        allow update: if false;
+        allow delete: if isAdmin() || isOffice();
+
+        match /chunks/{chunkId} {
+          allow read: if isStaff() || isOffice();
+          allow create: if (isAdmin() || isOffice()) &&
+            getAfter(/databases/$(database)/documents/admin_docs/$(docId)/files/$(fileId)).data.authorId == request.auth.uid &&
+            request.resource.data.data is bytes && request.resource.data.data.size() <= 750000 &&
+            request.resource.data.i is int && request.resource.data.i >= 0 &&
+            request.resource.data.i < getAfter(/databases/$(database)/documents/admin_docs/$(docId)/files/$(fileId)).data.chunkCount;
+          allow update: if false;
+          allow delete: if isAdmin() || isOffice();
+        }
+      }
+    }
+
+    // Danh sách cán bộ – giáo viên (/staff_members/{id}): chỉ BGH (có thể chứa SĐT).
+    match /staff_members/{memberId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Tên GV trên TKB ↔ tài khoản (/teacher_aliases/{uid}): GV tự chọn tên của mình, BGH sửa cho mọi người.
+    // Sổ cờ đỏ — điểm thi đua tuần do TPT/BGH nhập (/red_flag_weekly/{weekStart}_{classId}). Nhân sự xem.
+    match /red_flag_weekly/{flagId} {
+      allow read: if isStaff();
+      allow create, update: if (isAdmin() || isTPT()) &&
+        request.resource.data.keys().hasOnly(['weekStart', 'classId', 'score', 'maxScore', 'note', 'updatedBy', 'updatedByName', 'updatedAt']) &&
+        request.resource.data.weekStart is string && request.resource.data.weekStart.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        request.resource.data.classId is string && request.resource.data.classId.matches('^[0-9][A-Z][0-9]{1,2}$') &&
+        flagId == request.resource.data.weekStart + '_' + request.resource.data.classId &&
+        request.resource.data.maxScore is number && request.resource.data.maxScore > 0 && request.resource.data.maxScore <= 1000 &&
+        request.resource.data.score is number && request.resource.data.score >= 0 && request.resource.data.score <= request.resource.data.maxScore &&
+        request.resource.data.updatedBy == request.auth.uid &&
+        (!('note' in request.resource.data) || (request.resource.data.note is string && request.resource.data.note.size() <= 300));
+      allow delete: if isAdmin() || isTPT();
+    }
+
+    // Sổ cờ đỏ theo ngày — nhập từ file "Sổ Sao Đỏ" của TPT (/red_flag_daily/{date}: mọi lớp trong 1 doc,
+    // chỉ điểm trừ + lỗi, KHÔNG tên học sinh). Nhân sự xem.
+    match /red_flag_daily/{date} {
+      allow read: if isStaff();
+      allow create, update: if (isAdmin() || isTPT()) &&
+        request.resource.data.keys().hasOnly(['date', 'weekStart', 'classes', 'updatedBy', 'updatedByName', 'updatedAt']) &&
+        date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        request.resource.data.date == date &&
+        request.resource.data.weekStart is string && request.resource.data.weekStart.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        request.resource.data.classes is map && request.resource.data.classes.size() <= 40 &&
+        request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if isAdmin() || isTPT();
+    }
+
+    match /teacher_aliases/{aliasUid} {
+      allow read: if isStaff();
+      allow create, update: if (isAdmin() || (isTeacher() && request.auth.uid == aliasUid)) &&
+                            request.resource.data.uid == aliasUid &&
+                            request.resource.data.aliases is list &&
+                            request.resource.data.aliases.size() <= 10;
+      allow delete: if isAdmin();
+    }
+
+    // Lịch sử cập nhật TKB từ file Excel (/schedule_updates/{updateId}) — nhật ký, không sửa nội dung, không xóa.
+    match /schedule_updates/{updateId} {
+      allow read: if isStaff();
+      allow create: if isAdmin() &&
+                    request.resource.data.byUid == request.auth.uid &&
+                    request.resource.data.createdAt is number &&
+                    request.resource.data.changes is map;
+      // Chỉ được đánh dấu "đã hoàn tác"
+      allow update: if isAdmin() &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['undoneAt', 'undoneBy']);
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Weekly & Monthly Summaries
+    // -------------------------------------------------------------------------
+    match /weekly_summaries/{summaryId} {
+      allow read: if isStaff();
+      allow create: if isAuthenticated() && (isAdmin() || isGVCN(request.resource.data.classId));
+      allow update: if isAuthenticated() && (isAdmin() || isGVCN(resource.data.classId));
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    match /monthly_summaries/{summaryId} {
+      allow read: if isStaff();
+      allow create: if isAuthenticated() && (isAdmin() || isGVCN(request.resource.data.classId));
+      allow update: if isAuthenticated() && (isAdmin() || isGVCN(resource.data.classId));
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Thông báo thông minh (/announcements/{id}) + đã đọc (/announcements/{id}/reads/{uid})
+    // -------------------------------------------------------------------------
+    function myClassId() {
+      return userDocExists() ? getUserDoc().get('assignedClassId', '') : '';
+    }
+
+    function familyCanRead(data) {
+      return (hasRole('parent') && data.audienceKeys.hasAny(['parent:all', 'parent:' + myClassId()])) ||
+             (hasRole('student') && data.audienceKeys.hasAny(['student:all', 'student:' + myClassId()]));
+    }
+
+    function canReadAnnouncement(data) {
+      return isStaff() || familyCanRead(data);
+    }
+
+    function validAnnouncement(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 150 &&
+             d.body is string && d.body.size() > 0 && d.body.size() <= 5000 &&
+             d.level in ['urgent', 'important', 'normal'] &&
+             d.audienceKeys is list && d.audienceKeys.size() > 0 &&
+             d.authorId == request.auth.uid &&
+             d.createdAt is number;
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated() && canReadAnnouncement(resource.data);
+
+      // BGH: mọi đối tượng. GVCN: chỉ lớp mình (khóa đối tượng giới hạn trong lớp đó).
+      allow create: if isAuthenticated() && validAnnouncement(request.resource.data) && (
+        isAdmin() ||
+        (
+          hasRole('gvcn') && myClassId() != '' &&
+          request.resource.data.classId == myClassId() &&
+          request.resource.data.audienceKeys.hasOnly(['staff', 'parent:' + myClassId(), 'student:' + myClassId()])
+        )
+      );
+
+      allow update: if isAuthenticated() && (isAdmin() || resource.data.authorId == request.auth.uid) &&
+                      validAnnouncement(request.resource.data) &&
+                      request.resource.data.authorId == resource.data.authorId;
+      allow delete: if isAuthenticated() && (isAdmin() || resource.data.authorId == request.auth.uid);
+
+      match /reads/{readerUid} {
+        // Mỗi người chỉ ghi dấu "đã đọc" của chính mình, với thông báo mình được phép đọc.
+        allow create, update: if isAuthenticated() && request.auth.uid == readerUid &&
+          canReadAnnouncement(get(/databases/$(database)/documents/announcements/$(announcementId)).data) &&
+          request.resource.data.readAt is number;
+        // Đọc danh sách: chính mình, người đăng, hoặc BGH
+        allow read: if isAuthenticated() && (
+          request.auth.uid == readerUid ||
+          isAdmin() ||
+          get(/databases/$(database)/documents/announcements/$(announcementId)).data.authorId == request.auth.uid
+        );
+        allow delete: if false;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Xin nghỉ online (/leave_requests/{id}) & hồ sơ phép (/leave_profiles/{uid})
+    // Tổ trưởng gộp vào BGH (admin) → BGH duyệt.
+    // -------------------------------------------------------------------------
+    match /leave_requests/{requestId} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.requesterId == request.auth.uid);
+
+      // Nhân sự tự nộp đơn của mình, trạng thái ban đầu luôn là "chờ duyệt"
+      allow create: if isStaff() &&
+        request.resource.data.requesterId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.type in ['annual', 'unpaid', 'sick_self', 'sick_child', 'maternity'] &&
+        request.resource.data.workingDays is number && request.resource.data.workingDays >= 0 &&
+        request.resource.data.reason is string && request.resource.data.reason.size() > 0 &&
+        request.resource.data.docsSubmittedAt == null &&
+        !('decisionBy' in request.resource.data);
+
+      allow update: if isAuthenticated() && (
+        // BGH duyệt/từ chối đơn đang chờ
+        (
+          isAdmin() &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status in ['approved', 'rejected'] &&
+          request.resource.data.decisionBy == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decisionBy', 'decisionByName', 'decisionAt', 'decisionNote'])
+        ) ||
+        // Người nộp hủy đơn còn đang chờ
+        (
+          resource.data.requesterId == request.auth.uid &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'cancelled' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        ) ||
+        // Người nộp báo đã nộp giấy tờ
+        (
+          resource.data.requesterId == request.auth.uid &&
+          request.resource.data.docsSubmittedAt is number &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['docsSubmittedAt'])
+        )
+      );
+
+      // Không xóa đơn — giữ lịch sử phục vụ đối soát
+      allow delete: if false;
+    }
+
+    // Bảng chấm công đối soát (/timesheets/{period}/records/{uid})
+    // [UMS] GV phản hồi trong 03 ngày làm việc; quá hạn → mặc nhiên xác nhận.
+    match /timesheets/{period} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+
+      match /records/{recordUid} {
+        allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == recordUid);
+        allow create, delete: if isAdmin();
+        allow update: if isAuthenticated() && (
+          isAdmin() ||
+          (
+            request.auth.uid == recordUid &&
+            resource.data.status == 'pending' &&
+            request.resource.data.status in ['confirmed', 'disputed'] &&
+            (request.resource.data.status == 'confirmed' ||
+              (request.resource.data.disputeReason is string && request.resource.data.disputeReason.size() > 0)) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt', 'disputeReason']) &&
+            get(/databases/$(database)/documents/timesheets/$(period)).data.status == 'open' &&
+            request.time.toMillis() <= get(/databases/$(database)/documents/timesheets/$(period)).data.reviewDeadlineAt
+          )
+        );
+      }
+    }
+
+    // Bản tin chuyên cần từng HS (/student_daily/{mhs}_{date}) — Cổng phụ huynh.
+    // Tách từ Sổ đầu bài để PH chỉ thấy dữ liệu của con, không thấy HS khác.
+    match /student_daily/{entryId} {
+      allow read: if isStaff() ||
+        ((hasRole('parent') || hasRole('student')) && resource.data.mhs in linkedStudentMhs());
+      allow write: if isTeacher();
+    }
+
+    // Hồ sơ năng lực số (/portfolio_items/{id}) — HS nộp, GV duyệt, PH xem.
+    function ownsStudent(mhs) {
+      return hasRole('student') && mhs in linkedStudentMhs();
+    }
+
+    match /portfolio_items/{itemId} {
+      allow read: if isStaff() ||
+        ((hasRole('parent') || hasRole('student')) && resource.data.mhs in linkedStudentMhs());
+
+      // HS nộp minh chứng của chính mình (trạng thái "chờ duyệt"); nhân sự được thêm cho HS
+      allow create: if isAuthenticated() &&
+        request.resource.data.createdByUid == request.auth.uid &&
+        request.resource.data.status == 'submitted' &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 150 &&
+        request.resource.data.content is string && request.resource.data.content.size() <= 20000 &&
+        !('reviewerUid' in request.resource.data) &&
+        (isStaff() || ownsStudent(request.resource.data.mhs));
+
+      allow update: if isAuthenticated() && (
+        // GV duyệt / trả lại: chỉ sửa trường đánh giá
+        (
+          isStaff() &&
+          request.resource.data.status in ['approved', 'returned'] &&
+          request.resource.data.reviewerUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'teacherComment', 'teacherScore', 'reviewerUid', 'reviewerName', 'reviewedAt', 'updatedAt'])
+        ) ||
+        // HS sửa & nộp lại minh chứng của mình khi đang chờ duyệt hoặc bị trả lại (không tự duyệt)
+        (
+          ownsStudent(resource.data.mhs) &&
+          resource.data.status in ['submitted', 'returned'] &&
+          request.resource.data.status == 'submitted' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'type', 'category', 'content', 'reflection', 'links', 'ai', 'status', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isAdmin() || (ownsStudent(resource.data.mhs) && resource.data.status == 'submitted');
+    }
+
+    // ePortfolio GV: đọc tiết đã ký theo GV qua collection group (chỉ nhân sự)
+    match /{path=**}/periods/{periodIndex} {
+      allow read: if isStaff();
+    }
+
+    // Minh chứng chuyên môn GV tự nộp (/teacher_evidence/{id}) — BGH xác nhận
+    match /teacher_evidence/{evidenceId} {
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.uid == request.auth.uid);
+      allow create: if isStaff() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200 &&
+        !('verifiedBy' in request.resource.data);
+      allow update: if isAuthenticated() && (
+        // BGH xác nhận / bỏ xác nhận
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verifiedBy', 'verifiedByName', 'verifiedAt'])) ||
+        // GV sửa minh chứng của mình khi CHƯA được xác nhận (không tự xác nhận)
+        (resource.data.uid == request.auth.uid && !('verifiedAt' in resource.data) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'type', 'level', 'date', 'description', 'links']))
+      );
+      allow delete: if isAdmin() || (resource.data.uid == request.auth.uid && !('verifiedAt' in resource.data));
+    }
+
+    // Danh bạ nhân sự (chỉ uid + họ tên) để GV chọn người dạy thay — BGH cập nhật.
+    match /directory/{docId} {
+      allow read: if isStaff() || isOffice();
+      allow write: if isAdmin();
+      // Nhóm người nhận lưu sẵn (tổ bộ môn, ban…): Văn phòng cũng được sửa, tối đa 50 nhóm.
+      allow create, update: if docId == 'notice_groups' && isOffice() &&
+        request.resource.data.groups is list && request.resource.data.groups.size() <= 50 &&
+        request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    // Dạy thay (/substitutions/{id}) — GV xin nghỉ tự sắp xếp; chỉ chứa lịch, không chứa lý do nghỉ.
+    match /substitutions/{subId} {
+      allow read: if isStaff();
+
+      allow create: if isStaff() &&
+        request.resource.data.absentUid == request.auth.uid &&
+        request.resource.data.substituteUid != request.auth.uid &&
+        request.resource.data.status == 'planned' &&
+        request.resource.data.periodIndex is int &&
+        request.resource.data.periodIndex >= 1 && request.resource.data.periodIndex <= 8 &&
+        get(/databases/$(database)/documents/leave_requests/$(request.resource.data.leaveRequestId)).data.requesterId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && (
+          (isAdmin() && request.resource.data.status in ['approved', 'cancelled']) ||
+          (resource.data.absentUid == request.auth.uid && request.resource.data.status == 'cancelled')
+        );
+
+      allow delete: if false;
+    }
+
+    match /leave_profiles/{profileUid} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == profileUid);
+      allow write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Token thông báo đẩy (/fcm_tokens/{uid}) — P2 ngày thi 05/11/2026.
+    // Chỉ chủ tài khoản đọc/ghi token của mình, tối đa 3 máy; không ai list được.
+    // Client luôn ghi topicsDone=false; nhóm nhận do hàm gửi (Admin SDK, project umsplus-notify) tự tính từ users/{uid}.
+    // -------------------------------------------------------------------------
+    match /fcm_tokens/{uid} {
+      allow get: if isAuthenticated() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if isAuthenticated() && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['uid', 'username', 'tokens', 'topicsDone', 'updatedAt', 'topics', 'subscribedAt']) &&
+        request.resource.data.uid == uid &&
+        request.resource.data.username is string && request.resource.data.username.size() <= 60 &&
+        request.resource.data.tokens is list && request.resource.data.tokens.size() <= 3 &&
+        request.resource.data.topicsDone == false &&
+        request.resource.data.updatedAt is int;
+      allow delete: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Góp ý & lỗi qua Trợ lý (/feedback/{uid_ngày_stt}) — P1 ngày thi 05/11/2026.
+    // Ai đăng nhập cũng gửi được bản của mình; id = uid_ngày_stt (stt 1..10) → tối đa 10 bản/người/ngày.
+    // Chỉ admin đọc tất cả; người gửi đọc bản của mình. Ảnh (≤ 2, ≤ 300 KB) ghi cùng batch với bản tóm tắt.
+    // -------------------------------------------------------------------------
+    match /feedback/{fbId} {
+      function fbToday() {
+        return int(request.time.toMillis() / 86400000);
+      }
+      function validNewFeedback(d) {
+        return d.keys().hasOnly(['authorId', 'authorName', 'role', 'kind', 'message', 'question', 'page', 'appVersion',
+                                 'imageCount', 'day', 'seq', 'status', 'createdAt']) &&
+          d.authorId == request.auth.uid &&
+          d.status == 'new' &&
+          d.kind in ['bug', 'idea', 'question'] &&
+          d.message is string && d.message.size() > 0 && d.message.size() <= 2000 &&
+          d.authorName is string && d.authorName.size() <= 80 &&
+          d.role is string && d.role.size() <= 20 &&
+          d.question is string && d.question.size() <= 200 &&
+          d.page is string && d.page.size() <= 120 &&
+          d.appVersion is string && d.appVersion.size() <= 60 &&
+          d.imageCount is int && d.imageCount >= 0 && d.imageCount <= 2 &&
+          d.seq is int && d.seq >= 1 && d.seq <= 10 &&
+          d.day == fbToday() &&
+          d.createdAt is int &&
+          fbId == request.auth.uid + '_' + string(d.day) + '_' + string(d.seq);
+      }
+      allow create: if isAuthenticated() && validNewFeedback(request.resource.data);
+      allow get, list: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt', 'updatedBy']) &&
+        request.resource.data.status in ['new', 'doing', 'done', 'idea'];
+      allow delete: if isAdmin();
+
+      match /images/{imgId} {
+        allow create: if isAuthenticated() &&
+          getAfter(/databases/$(database)/documents/feedback/$(fbId)).data.authorId == request.auth.uid &&
+          imgId in ['0', '1'] &&
+          int(imgId) < getAfter(/databases/$(database)/documents/feedback/$(fbId)).data.imageCount &&
+          request.resource.data.keys().hasOnly(['data', 'type']) &&
+          request.resource.data.data is bytes && request.resource.data.data.size() <= 300000 &&
+          request.resource.data.type in ['image/jpeg', 'image/webp', 'image/png'];
+        allow get: if isAdmin() ||
+          (isAuthenticated() && get(/databases/$(database)/documents/feedback/$(fbId)).data.authorId == request.auth.uid);
+        allow list, update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Đơn xin nghỉ học của PH (/student_leave/{uid_ngày_stt}) — PH gửi, GVCN duyệt.
+    // id = parentUid_ngày_stt (stt 1..5) → tối đa 5 đơn/PH/ngày. Không lưu field id trong doc.
+    // PH chỉ huỷ được đơn còn chờ; GVCN lớp đó (hoặc admin) duyệt/từ chối đơn còn chờ. HS không có quyền. Không xoá.
+    // -------------------------------------------------------------------------
+    match /student_leave/{leaveId} {
+      function slToday() {
+        return int(request.time.toMillis() / 86400000);
+      }
+      function validNewLeave(d) {
+        return d.keys().hasOnly(['mhs', 'studentName', 'classId', 'parentUid', 'parentName', 'kind', 'dates', 'periods',
+                                 'meal', 'reason', 'note', 'status', 'day', 'seq', 'createdAt']) &&
+          d.parentUid == request.auth.uid &&
+          d.mhs is string && d.mhs in linkedStudentMhs() &&
+          d.status == 'pending' &&
+          d.studentName is string && d.studentName.size() <= 80 &&
+          d.parentName is string && d.parentName.size() <= 80 &&
+          d.classId is string && d.classId.size() > 0 && d.classId.size() <= 6 &&
+          d.kind in ['day', 'periods'] &&
+          d.dates is list && d.dates.size() >= 1 && d.dates.size() <= 5 &&
+          d.periods is list && d.periods.size() <= 8 &&
+          (d.kind == 'day'
+            ? d.periods.size() == 0
+            : (d.dates.size() == 1 && d.periods.size() >= 1 && d.periods.hasOnly([1, 2, 3, 4, 5, 6, 7, 8]))) &&
+          d.meal is bool &&
+          d.reason in ['sick', 'family', 'other'] &&
+          d.note is string && d.note.size() <= 300 &&
+          d.seq is int && d.seq >= 1 && d.seq <= 5 &&
+          d.day == slToday() &&
+          d.createdAt is int &&
+          leaveId == request.auth.uid + '_' + string(d.day) + '_' + string(d.seq);
+      }
+      allow create: if hasRole('parent') && validNewLeave(request.resource.data);
+      allow get, list: if isAuthenticated() && (
+        resource.data.parentUid == request.auth.uid ||
+        isGVCN(resource.data.classId) ||
+        isAdmin() ||
+        hasRole('vanphong') ||
+        ((isGiamThi() || isTPT()) && resource.data.status == 'approved')
+      );
+      allow update: if isAuthenticated() && resource.data.status == 'pending' && (
+        (
+          resource.data.parentUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']) &&
+          request.resource.data.status == 'cancelled'
+        ) || (
+          isGVCN(resource.data.classId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt', 'decidedBy', 'decidedByName', 'rejectReason']) &&
+          request.resource.data.status in ['approved', 'rejected'] &&
+          request.resource.data.decidedBy == request.auth.uid
+        )
+      );
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Immutable Append-Only Audit Trail (/audit_logs/{logId})
+    // -------------------------------------------------------------------------
+    match /audit_logs/{logId} {
+      // Chỉ ghi được bản nhật ký đứng tên chính mình (không giả danh người khác)
+      allow create: if isAuthenticated() && request.resource.data.actorId == request.auth.uid;
+
+      // Only Admin can read the audit trail
+      allow read: if isAuthenticated() && isAdmin();
+
+      // Strictly immutable: No modifications or deletions permitted under any circumstance
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Sổ điểm môn học — xem utils/gradebook.ts
+    //  grade_assignments: ai nhập điểm lớp-môn nào (BGH dựng từ TKB / sửa tay)
+    //  gradebooks: 1 doc/lớp/môn/HK — GV được phân công ghi, GVCN đọc lớp mình; PH/HS KHÔNG đọc (có cả lớp)
+    //  gradebooks/{id}/history: lịch sử sửa, chỉ thêm
+    //  grade_reports: bản công bố 1 HS/HK — PH/HS đọc của con/mình; GVCN đọc HS lớp mình
+    // -------------------------------------------------------------------------
+    function gradeAssignmentPath(year, classId, subjectKey) {
+      return /databases/$(database)/documents/grade_assignments/$(year + '_' + classId + '_' + subjectKey);
+    }
+
+    function isGradeTeacher(year, classId, subjectKey) {
+      return isTeacher() &&
+        exists(gradeAssignmentPath(year, classId, subjectKey)) &&
+        request.auth.uid in get(gradeAssignmentPath(year, classId, subjectKey)).data.get('teacherUids', []);
+    }
+
+    function validGradebook(gbId, d) {
+      return d.year is string && d.classId is string && d.subjectKey is string &&
+        d.term in [1, 2] &&
+        gbId == d.year + '_HK' + string(d.term) + '_' + d.classId + '_' + d.subjectKey &&
+        d.mode in ['score', 'comment'] &&
+        d.txMin is int && d.txMin >= 1 && d.txMin <= 4 &&
+        d.status in ['draft', 'published', 'locked'] &&
+        d.rows is map && d.rows.size() <= 80 &&
+        d.version is int &&
+        d.updatedBy == request.auth.uid;
+    }
+
+    match /grade_assignments/{assignmentId} {
+      allow read: if isStaff();
+      allow create, update: if isAdmin() &&
+        request.resource.data.teacherUids is list && request.resource.data.teacherUids.size() <= 10 &&
+        assignmentId == request.resource.data.year + '_' + request.resource.data.classId + '_' + request.resource.data.subjectKey;
+      allow delete: if isAdmin();
+    }
+
+    match /gradebooks/{gbId} {
+      // Doc chưa có: GV mở lưới lần đầu (đọc trả về rỗng)
+      allow get: if resource == null ? isTeacher() :
+        (isAdmin() || isGVCN(resource.data.classId) || isGradeTeacher(resource.data.year, resource.data.classId, resource.data.subjectKey));
+      // GVCN liệt kê sổ lớp mình (truy vấn phải có where classId ==); BGH liệt kê mọi lớp
+      allow list: if isAdmin() || isGVCN(resource.data.classId);
+
+      allow create: if validGradebook(gbId, request.resource.data) &&
+        request.resource.data.version == 1 &&
+        request.resource.data.status == 'draft' &&
+        (isAdmin() || isGradeTeacher(request.resource.data.year, request.resource.data.classId, request.resource.data.subjectKey));
+
+      // Ghi đúng phiên bản kế tiếp (2 người cùng sửa → người sau bị từ chối, tải lại).
+      // GV: không sửa sổ đã khóa, không đưa sổ đã công bố về nháp; chỉ BGH mở khóa.
+      allow update: if validGradebook(gbId, request.resource.data) &&
+        request.resource.data.version == resource.data.version + 1 &&
+        request.resource.data.year == resource.data.year &&
+        request.resource.data.term == resource.data.term &&
+        request.resource.data.classId == resource.data.classId &&
+        request.resource.data.subjectKey == resource.data.subjectKey &&
+        (
+          isAdmin() ||
+          (
+            isGradeTeacher(resource.data.year, resource.data.classId, resource.data.subjectKey) &&
+            resource.data.status != 'locked' &&
+            (resource.data.status == 'draft' || request.resource.data.status != 'draft')
+          )
+        );
+      allow delete: if isAdmin();
+
+      match /history/{entryId} {
+        allow read: if isAdmin() ||
+          isGVCN(get(/databases/$(database)/documents/gradebooks/$(gbId)).data.classId) ||
+          isGradeTeacher(
+            get(/databases/$(database)/documents/gradebooks/$(gbId)).data.year,
+            get(/databases/$(database)/documents/gradebooks/$(gbId)).data.classId,
+            get(/databases/$(database)/documents/gradebooks/$(gbId)).data.subjectKey
+          );
+        // Ghi cùng lượt với sổ (batch): khớp phiên bản sổ sau khi ghi
+        allow create: if isTeacher() &&
+          request.resource.data.byUid == request.auth.uid &&
+          request.resource.data.action in ['edit', 'publish', 'lock', 'unlock', 'import'] &&
+          request.resource.data.changes is list && request.resource.data.changes.size() <= 600 &&
+          getAfter(/databases/$(database)/documents/gradebooks/$(gbId)).data.version == request.resource.data.version &&
+          getAfter(/databases/$(database)/documents/gradebooks/$(gbId)).data.updatedBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    match /grade_reports/{reportId} {
+      // Bản công bố của 1 HS: BGH, GVCN đúng lớp, PH/HS của đúng HS đó (studentMhs trên hồ sơ tài khoản).
+      // GV bộ môn chỉ ghi (công bố) phần môn mình, không cần đọc. Doc chưa có → đọc trả rỗng cho người được xem.
+      allow get: if isAdmin() ||
+        (resource == null ? (isTeacher() || hasRole('parent') || hasRole('student')) :
+          (isGVCN(resource.data.classId) ||
+           ((hasRole('parent') || hasRole('student')) && resource.data.mhs in linkedStudentMhs())));
+      allow list: if isAdmin();
+      // Công bố: GV chỉ ghi phần môn mình được phân công (lastSubjectKey)
+      allow create: if reportId == request.resource.data.year + '_HK' + string(request.resource.data.term) + '_' + request.resource.data.mhs &&
+        request.resource.data.subjects is map &&
+        request.resource.data.subjects.keys().hasOnly([request.resource.data.lastSubjectKey]) &&
+        (isAdmin() || isGradeTeacher(request.resource.data.year, request.resource.data.classId, request.resource.data.lastSubjectKey));
+      allow update: if request.resource.data.mhs == resource.data.mhs &&
+        request.resource.data.year == resource.data.year &&
+        request.resource.data.term == resource.data.term &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subjects', 'lastSubjectKey', 'classId', 'updatedAt', 'updatedBy']) &&
+        request.resource.data.subjects.diff(resource.data.subjects).affectedKeys().hasOnly([request.resource.data.lastSubjectKey]) &&
+        (isAdmin() || isGradeTeacher(request.resource.data.year, request.resource.data.classId, request.resource.data.lastSubjectKey));
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // Fallback: Default Deny All Other Unmatched Collections
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

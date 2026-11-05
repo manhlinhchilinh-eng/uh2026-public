@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Chấm Thi OMR — ENG9 GRADING</title>
+  <path fill="#FFFFFF" d="M64 8 H192 A56 56 0 0 1 248 64 V192 A56 56 0 0 1 192 248 H64 A56 56 0 0 1 8 192 V64 A56 56 0 0 1 64 8 Z"/>
+  <path fill="#611736" fill-rule="evenodd" d="M24 60 A36 36 0 0 1 60 24 H100 V44 H60 A16 16 0 0 0 44 60 V100 H24 Z M212 156 H232 V196 A36 36 0 0 1 196 232 H156 V212 H196 A16 16 0 0 0 212 196 Z M50 172 A34 34 0 1 0 118 172 A34 34 0 1 0 50 172 Z M68 172 A16 16 0 1 0 100 172 A16 16 0 1 0 68 172 Z"/>
+  <path fill="#8B1A4A" fill-rule="evenodd" d="M50 88 A34 34 0 1 0 118 88 A34 34 0 1 0 50 88 Z M68 88 A16 16 0 1 0 100 88 A16 16 0 1 0 68 88 Z M134 172 A34 34 0 1 0 202 172 A34 34 0 1 0 134 172 Z M152 172 A16 16 0 1 0 184 172 A16 16 0 1 0 152 172 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M128 82 A46 46 0 1 0 220 82 A46 46 0 1 0 128 82 Z M154 82 L168 96 L196 68 L186 58 L168 76 L164 72 Z"/>
+</svg>

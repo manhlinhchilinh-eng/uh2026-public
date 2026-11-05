@@ -1,0 +1,21 @@
+{
+  "projects": {
+    "default": "sodaubai",
+    "dev": "sodaubai-dev"
+  },
+  "targets": {
+    "sodaubai": {
+      "hosting": {
+        "app": [
+          "umsplus"
+        ],
+        "smartconnect": [
+          "umssmartconnect"
+        ],
+        "legacy": [
+          "sodaubai-ums"
+        ]
+      }
+    }
+  }
+}

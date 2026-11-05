@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UMS+ Brand Identity &amp; Logo Kit — Preview</title>
+  <link rel="icon" type="image/svg+xml" href="./logos/umsplus/logo.svg" />
+  <style>
+    :root {
+      --ums-primary: #8B1A4A;
+      --ums-dark: #611736;
+      --ums-amber: #F59E0B;
+      --ums-white: #FFFFFF;
+      --ums-bg: #F8FAFC;
+      --ums-border: #E2E8F0;
+      --ums-text: #0F172A;
+      --ums-muted: #475569;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--ums-bg);
+      color: var(--ums-text);
+      line-height: 1.5;
+    }
+    header {
+      background: linear-gradient(135deg, var(--ums-dark) 0%, var(--ums-primary) 100%);
+      color: var(--ums-white);
+      padding: 36px 24px;
+      border-bottom: 4px solid var(--ums-amber);
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .header-brand img {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      margin: 4px 0 0;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    .swatches {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+    }
+    .swatch-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+    .section-title {
+      margin: 36px 0 16px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ums-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 22px;
+      border-radius: 4px;
+      background: var(--ums-amber);
+    }
+    /* Shelf comparison strip at 32px & 64px */
+    .shelf-bar {
+      background: var(--ums-white);
+      border: 1px solid var(--ums-border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .shelf-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .shelf-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ums-muted);
+      margin-right: 6px;
+    }
+    .shelf-dark {
+      background: #1E1B24;
+      padding: 12px 18px;
+      border-radius: 12px;
+    }
+    .shelf-dark .shelf-label {
+      color: #CBD5E1;
+    }
+    /* Grid of 8 cards */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .logo-card {
+      background: var(--ums-white);
+      border: 1px solid var(--ums-border);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      padding: 16px 20px;
+      background: #FDF8FA;
+      border-bottom: 1px solid #F1E4EA;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ums-dark);
+    }
+    .card-slug {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.8rem;
+      background: #F8EBF0;
+      color: var(--ums-primary);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .horiz-preview {
+      background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+      border: 1px dashed #CBD5E1;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .horiz-preview img {
+      max-width: 100%;
+      height: 84px;
+      object-fit: contain;
+    }
+    .sizes-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      text-align: center;
+    }
+    .size-box {
+      background: #F8FAFC;
+      border: 1px solid var(--ums-border);
+      border-radius: 12px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-height: 128px;
+    }
+    .size-box.dark {
+      background: #1E1B24;
+      border-color: #33293F;
+      color: #E2E8F0;
+    }
+    .size-caption {
+      font-size: 0.72rem;
+      color: var(--ums-muted);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .size-box.dark .size-caption {
+      color: #94A3B8;
+    }
+    .maskable-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--ums-amber);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .maskable-circle img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .card-footer {
+      padding: 12px 20px;
+      background: #F8FAFC;
+      border-top: 1px solid var(--ums-border);
+      font-size: 0.82rem;
+      color: var(--ums-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .file-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .file-badge {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.72rem;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 2px 7px;
+      color: #334155;
+      text-decoration: none;
+    }
+    .file-badge:hover {
+      border-color: var(--ums-primary);
+      color: var(--ums-primary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-top">
+      <div class="header-brand">
+        <img src="./logos/umsplus/logo.svg" alt="UMS+ Logo" />
+        <div>
+          <h1>Bộ Nhận Diện Hệ Sinh Thái UMS+ (ULIS Middle School)</h1>
+          <p class="subtitle">8 biểu tượng hình học đồng bộ · Chuẩn hiển thị 32px · Bản ngang song ngữ VI + EN</p>
+        </div>
+      </div>
+      <div class="swatches">
+        <div class="swatch">
+          <span class="swatch-dot" style="background:#8B1A4A"></span>
+          <div><strong>#8B1A4A</strong><br/>Đỏ đô (Chính)</div>
+        </div>
+        <div class="swatch">
+          <span class="swatch-dot" style="background:#611736"></span>
+          <div><strong>#611736</strong><br/>Đỏ đô đậm</div>
+        </div>
+        <div class="swatch">
+          <span class="swatch-dot" style="background:#F59E0B"></span>
+          <div><strong>#F59E0B</strong><br/>Hổ phách (Nhấn)</div>
+        </div>
+        <div class="swatch">
+          <span class="swatch-dot" style="background:#FFFFFF"></span>
+          <div><strong>#FFFFFF</strong><br/>Nền trắng</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2 class="section-title">Kiểm tra phân biệt nhanh ở cỡ 32px (Favicon Test) &amp; 48px</h2>
+    <div class="shelf-bar">
+      <div class="shelf-group">
+        <span class="shelf-label">Nền sáng · 32px:</span>
+        <img src="./logos/umsplus/favicon-32.png" width="32" height="32" title="1. UMS+" alt="UMS+ 32" />
+        <img src="./logos/logbook/favicon-32.png" width="32" height="32" title="2. Sổ đầu bài" alt="Logbook 32" />
+        <img src="./logos/practice/favicon-32.png" width="32" height="32" title="3. Eng9 Practice" alt="Practice 32" />
+        <img src="./logos/grading/favicon-32.png" width="32" height="32" title="4. Eng9 Grading" alt="Grading 32" />
+        <img src="./logos/eng9hub/favicon-32.png" width="32" height="32" title="5. Eng9 Hub" alt="Eng9 Hub 32" />
+        <img src="./logos/homeroom9/favicon-32.png" width="32" height="32" title="6. Homeroom9" alt="Homeroom9 32" />
+        <img src="./logos/eportfolio/favicon-32.png" width="32" height="32" title="7. ePortfolio" alt="ePortfolio 32" />
+        <img src="./logos/esl/favicon-32.png" width="32" height="32" title="8. ESL" alt="ESL 32" />
+      </div>
+      <div class="shelf-group shelf-dark">
+        <span class="shelf-label">Nền tối · 32px:</span>
+        <img src="./logos/umsplus/favicon-32.png" width="32" height="32" title="1. UMS+" alt="UMS+ 32" />
+        <img src="./logos/logbook/favicon-32.png" width="32" height="32" title="2. Sổ đầu bài" alt="Logbook 32" />
+        <img src="./logos/practice/favicon-32.png" width="32" height="32" title="3. Eng9 Practice" alt="Practice 32" />
+        <img src="./logos/grading/favicon-32.png" width="32" height="32" title="4. Eng9 Grading" alt="Grading 32" />
+        <img src="./logos/eng9hub/favicon-32.png" width="32" height="32" title="5. Eng9 Hub" alt="Eng9 Hub 32" />
+        <img src="./logos/homeroom9/favicon-32.png" width="32" height="32" title="6. Homeroom9" alt="Homeroom9 32" />
+        <img src="./logos/eportfolio/favicon-32.png" width="32" height="32" title="7. ePortfolio" alt="ePortfolio 32" />
+        <img src="./logos/esl/favicon-32.png" width="32" height="32" title="8. ESL" alt="ESL 32" />
+      </div>
+    </div>
+
+    <h2 class="section-title">Chi tiết 8 bộ Logo Hệ Sinh Thái UMS+</h2>
+    <div class="logo-grid" id="grid"></div>
+  </main>
+
+  <script>
+    const ITEMS = [
+      { slug: 'umsplus', num: 1, name: 'UMS+ (Logo mẹ — Kết nối các phân hệ)', app: 'umsplus.web.app (ums-logbook)' },
+      { slug: 'logbook', num: 2, name: 'Sổ đầu bài – Class Logbook', app: 'umsplus.web.app/logbook' },
+      { slug: 'practice', num: 3, name: 'Eng9 Practice – Luyện tập', app: 'umseng9practice.web.app' },
+      { slug: 'grading', num: 4, name: 'Eng9 Grading – Chấm OMR', app: 'umseng9grading.web.app' },
+      { slug: 'eng9hub', num: 5, name: 'Eng9 Hub – Sổ điểm', app: 'umseng9hub.web.app' },
+      { slug: 'homeroom9', num: 6, name: 'Homeroom9 – Cổng GVCN / Khảo sát', app: 'umshomeroom9.web.app' },
+      { slug: 'eportfolio', num: 7, name: 'ePortfolio – Hồ sơ năng lực', app: 'umsplus.web.app/portfolio' },
+      { slug: 'esl', num: 8, name: 'ESL – Dạy bằng tiếng Anh', app: 'umsplus.web.app/esl' },
+    ];
+
+    const grid = document.getElementById('grid');
+    ITEMS.forEach((item) => {
+      const base = `./logos/${item.slug}`;
+      const card = document.createElement('article');
+      card.className = 'logo-card';
+      card.innerHTML = `
+        <div class="card-header">
+          <h3 class="card-title">${item.num}. ${item.name}</h3>
+          <span class="card-slug">logos/${item.slug}/</span>
+        </div>
+        <div class="card-body">
+          <div class="horiz-preview" title="logo-horizontal.svg">
+            <img src="${base}/logo-horizontal.svg" alt="${item.name} Horizontal" />
+          </div>
+          <div class="sizes-row">
+            <div class="size-box">
+              <img src="${base}/logo.svg" width="76" height="76" alt="${item.name} SVG" />
+              <span class="size-caption">logo.svg (76px)</span>
+            </div>
+            <div class="size-box dark">
+              <img src="${base}/logo.svg" width="64" height="64" alt="${item.name} Dark" />
+              <span class="size-caption">Nền tối (64px)</span>
+            </div>
+            <div class="size-box">
+              <img src="${base}/favicon-32.png" width="32" height="32" alt="${item.name} 32px" />
+              <span class="size-caption">favicon-32.png</span>
+            </div>
+            <div class="size-box">
+              <div class="maskable-circle" title="Vùng cắt tròn Android/PWA Maskable">
+                <img src="${base}/icon-maskable-512.png" alt="${item.name} Maskable" />
+              </div>
+              <span class="size-caption">maskable-512 (circle)</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Ứng dụng: <strong>${item.app}</strong></span>
+          <div class="file-badges">
+            <a class="file-badge" href="${base}/logo.svg" target="_blank">logo.svg</a>
+            <a class="file-badge" href="${base}/logo-horizontal.svg" target="_blank">logo-horizontal.svg</a>
+            <a class="file-badge" href="${base}/favicon-32.png" target="_blank">favicon-32.png</a>
+            <a class="file-badge" href="${base}/icon-192.png" target="_blank">icon-192.png</a>
+            <a class="file-badge" href="${base}/icon-512.png" target="_blank">icon-512.png</a>
+            <a class="file-badge" href="${base}/icon-maskable-512.png" target="_blank">icon-maskable-512.png</a>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
